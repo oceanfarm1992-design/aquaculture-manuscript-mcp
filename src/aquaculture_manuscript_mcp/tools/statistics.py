@@ -20,7 +20,10 @@ from __future__ import annotations
 import itertools
 
 import numpy as np
+import pandas as pd
 from scipy import stats as scipy_stats
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 
@@ -293,4 +296,86 @@ def calculate_confidence_interval(values: list[float], confidence: float = 0.95)
         "ci_lower": mean - margin,
         "ci_upper": mean + margin,
         "margin_of_error": margin,
+    }
+
+
+def analyze_two_way_anova(
+    values: list[float],
+    factor1: list[str],
+    factor2: list[str],
+    factor1_name: str = "factor1",
+    factor2_name: str = "factor2",
+) -> dict:
+    """Two-way factorial ANOVA with interaction term (Type II sum of squares),
+    via statsmodels — the standard design for aquaculture nutrition trials
+    with two crossed treatments (e.g. diet x feeding frequency).
+
+    values, factor1, factor2 are one entry PER OBSERVATION (long format, not
+    pre-grouped) — e.g. values=[SGR for each tank], factor1=[diet level for
+    each tank], factor2=[feeding frequency for each tank]. All three must be
+    the same length.
+
+    Column names in the internal formula are fixed ("f1"/"f2") regardless of
+    factor1_name/factor2_name, so arbitrary factor names never get interpolated
+    into the statsmodels/patsy formula string.
+    """
+    n = len(values)
+    if n != len(factor1) or n != len(factor2):
+        raise ValueError("values, factor1, and factor2 must be the same length (one entry per observation)")
+    if n < 4:
+        raise ValueError("need at least 4 observations for a two-way ANOVA with an interaction term")
+
+    frame = pd.DataFrame({"value": [float(v) for v in values], "f1": factor1, "f2": factor2})
+    model = ols("value ~ C(f1) * C(f2)", data=frame).fit()
+    table = anova_lm(model, typ=2)
+
+    ss_total = table["sum_sq"].sum()
+    table["eta_sq"] = table["sum_sq"] / ss_total
+
+    term_map = {
+        "C(f1)": factor1_name,
+        "C(f2)": factor2_name,
+        "C(f1):C(f2)": f"{factor1_name}:{factor2_name} (interaction)",
+        "Residual": "Residual",
+    }
+
+    terms = {}
+    for term_key, row in table.iterrows():
+        f_stat = row["F"]
+        p_val = row["PR(>F)"]
+        terms[term_map.get(term_key, term_key)] = {
+            "sum_sq": float(row["sum_sq"]),
+            "df": float(row["df"]),
+            "f_statistic": None if pd.isna(f_stat) else float(f_stat),
+            "p_value": None if pd.isna(p_val) else float(p_val),
+            "eta_squared": float(row["eta_sq"]),
+            "significant_at_alpha_0.05": None if pd.isna(p_val) else bool(p_val < 0.05),
+        }
+
+    return {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": terms,
+        "note": (
+            "eta_squared here is simple (non-partial) eta-squared: term SS / "
+            "total SS. A significant interaction term means the two factors' "
+            "effects are not simply additive — interpret each main effect "
+            "with that in mind rather than in isolation."
+        ),
+    }
+
+
+def calculate_pearson_correlation(x: list[float], y: list[float]) -> dict:
+    """Pearson correlation coefficient between two continuous variables."""
+    arr_x = _validate_group(x, "x")
+    arr_y = _validate_group(y, "y")
+    if arr_x.size != arr_y.size:
+        raise ValueError("x and y must be the same length")
+
+    r, p_value = scipy_stats.pearsonr(arr_x, arr_y)
+    return {
+        "r": float(r),
+        "r_squared": float(r**2),
+        "p_value": float(p_value),
+        "n": int(arr_x.size),
+        "significant_at_alpha_0.05": bool(p_value < 0.05),
     }

@@ -16,7 +16,14 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from aquaculture_manuscript_mcp import agents, integrity, journals, llm_client, pipeline
-from aquaculture_manuscript_mcp.tools import bibtex_tools, calculators, citations, statistics as statistics_tool, water_quality
+from aquaculture_manuscript_mcp.tools import (
+    bibtex_tools,
+    calculators,
+    citations,
+    docx_export,
+    statistics as statistics_tool,
+    water_quality,
+)
 
 mcp = FastMCP("aquaculture-manuscript-writing")
 
@@ -444,6 +451,62 @@ def calculate_eta_squared(groups: list[list[float]]) -> dict:
 def calculate_confidence_interval(values: list[float], confidence: float = 0.95) -> dict:
     """Confidence interval for the mean via the t-distribution."""
     return statistics_tool.calculate_confidence_interval(values, confidence)
+
+
+@mcp.tool()
+def analyze_two_way_anova(
+    values: list[float],
+    factor1: list[str],
+    factor2: list[str],
+    factor1_name: str = "factor1",
+    factor2_name: str = "factor2",
+) -> dict:
+    """Two-way factorial ANOVA with interaction term (Type II sum of
+    squares) — the standard design for trials crossing two treatments (e.g.
+    diet x feeding frequency). values/factor1/factor2 are one entry PER
+    OBSERVATION (long format), all the same length."""
+    return statistics_tool.analyze_two_way_anova(values, factor1, factor2, factor1_name, factor2_name)
+
+
+@mcp.tool()
+def calculate_pearson_correlation(x: list[float], y: list[float]) -> dict:
+    """Pearson correlation coefficient between two continuous variables."""
+    return statistics_tool.calculate_pearson_correlation(x, y)
+
+
+# ---------------------------------------------------------------------------
+# Manuscript export — assembles real content into a real .docx file. Never
+# invents content; a missing section stays missing rather than being filled
+# with something plausible-sounding.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def export_manuscript_docx(
+    output_path: str,
+    title: str,
+    abstract: str,
+    keywords: list[str],
+    sections: list[dict],
+    authors: list[str] | None = None,
+    tables: list[dict] | None = None,
+    references: list[str] | None = None,
+    ai_disclosure: str | None = None,
+) -> dict:
+    """Write a real .docx manuscript file to output_path, with standard
+    academic formatting (Times New Roman, title/abstract/keywords block,
+    heading-per-section, native Word tables, hanging-indent references).
+
+    sections: ordered list of {"heading": str, "body": str}.
+    tables: optional list of {"caption": str, "headers": [...], "rows": [[...]]}.
+    references: optional list of pre-formatted citation strings — this tool
+        doesn't format or verify them (see resolve_doi_metadata/validate_bibtex).
+    ai_disclosure: optional exact text from draft_ai_disclosure, placed in its
+        own section before the references list.
+    """
+    return docx_export.export_manuscript_docx(
+        output_path, title, abstract, keywords, sections, authors, tables, references, ai_disclosure
+    )
 
 
 def main() -> None:

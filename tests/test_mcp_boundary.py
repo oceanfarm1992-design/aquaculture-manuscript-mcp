@@ -14,7 +14,7 @@ async def test_prompts_tools_resources_all_register():
     tools = await mcp.list_tools()
     resources = await mcp.list_resources()
     assert len(prompts) == 7
-    assert len(tools) == 27
+    assert len(tools) == 30
     assert len(resources) == 3
 
 
