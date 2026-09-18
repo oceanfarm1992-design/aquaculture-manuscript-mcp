@@ -23,6 +23,17 @@ physical data collection, grant sign-off, peer review, running an actual
 similarity-scan tool) are listed via the `aquaculture://human-only-roles`
 resource — the server does not attempt them.
 
+**Journal rules are not hard-coded.** Abstract word limits, keyword counts,
+citation style, and whether an AI-use declaration is required all differ by
+journal (confirmed: Elsevier's *Aquaculture* requires a 250-word abstract, 5-7
+keywords, and a mandatory AI-disclosure statement; Wiley's *Aquaculture
+Research* is a 200-word abstract, 4-6 keywords, APA citations, and its
+AI-disclosure policy wasn't visible in the guide pages checked). The
+`abstract-agent`, `drafting-agent`, and `integrity-agent` prompts take an
+optional `journal` argument (a key from `list_supported_journals`); without
+one, they're instructed to ask you which journal applies rather than default
+to a number from a different one.
+
 **This server does not help evade AI-detection or plagiarism-scan tools.** Every
 agent is built to disclose AI assistance (see `integrity-agent` /
 `draft_ai_disclosure`) and to never fabricate data or citations. See
@@ -108,10 +119,14 @@ server outside an MCP client).
 - `check_citation_integrity(draft_text, source_texts)` — flags any run of 3+
   consecutive words shared between your draft and a source, no LLM call
   involved. A real paraphrase check.
-- `draft_ai_disclosure(tool_name, reason)` — returns the exact
-  "Declaration of generative AI use" paragraph text to place before your
-  references list (Elsevier-style; adapt wording for other journals).
-- `run_agent_with_external_model(agent_name, task_input, model=None, base_url=None)`
+- `list_supported_journals()` — returns the known journal profiles (abstract
+  limit, keyword count, citation style, AI-disclosure requirement), each with
+  only facts confirmed by actually reading that journal's author guide.
+- `draft_ai_disclosure(tool_name, reason, journal="")` — returns the exact
+  "Declaration of generative AI use" paragraph text, but only once `journal`
+  identifies a profile confirmed to require one; otherwise it tells you to ask
+  rather than guessing.
+- `run_agent_with_external_model(agent_name, task_input, journal="", model=None, base_url=None)`
   — runs any of the six agents against an external OpenAI-compatible model using
   `AQUA_API_KEY`.
 

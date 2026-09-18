@@ -15,9 +15,30 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import agents, integrity, llm_client
+from . import agents, integrity, journals, llm_client
 
 mcp = FastMCP("aquaculture-manuscript-writing")
+
+
+def _journal_context(journal: str) -> str:
+    """Build the journal-specific rules block for a prompt, or — if no valid
+    journal was given — an explicit instruction to ask the user rather than
+    guess. Never lets a journal-specific number leak in un-asked-for.
+    """
+    if not journal:
+        known = ", ".join(sorted(journals.JOURNALS))
+        return (
+            "\n\nNo target journal was specified for this task. Before applying "
+            "any journal-specific limit (abstract word count, keyword count, "
+            "citation style, AI-disclosure requirement), ask the user which "
+            f"journal this is for. Known profiles: {known}. For any other "
+            "journal, ask the user to supply the limits from that journal's own "
+            "author guide rather than assuming they match one of the above."
+        )
+    try:
+        return "\n\n" + journals.format_journal_rules(journal)
+    except ValueError as exc:
+        return f"\n\n{exc}"
 
 
 # ---------------------------------------------------------------------------
@@ -37,8 +58,8 @@ def literature_agent(task_input: str) -> str:
     name="drafting-agent",
     description=agents.AGENTS["drafting"]["description"],
 )
-def drafting_agent(task_input: str) -> str:
-    return f"{agents.DRAFTING_AGENT_SYSTEM}\n\nTask:\n{task_input}"
+def drafting_agent(task_input: str, journal: str = "") -> str:
+    return f"{agents.DRAFTING_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
 
 
 @mcp.prompt(
@@ -53,8 +74,8 @@ def results_agent(task_input: str) -> str:
     name="abstract-agent",
     description=agents.AGENTS["abstract"]["description"],
 )
-def abstract_agent(task_input: str) -> str:
-    return f"{agents.ABSTRACT_AGENT_SYSTEM}\n\nTask:\n{task_input}"
+def abstract_agent(task_input: str, journal: str = "") -> str:
+    return f"{agents.ABSTRACT_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
 
 
 @mcp.prompt(
@@ -69,8 +90,8 @@ def copyedit_agent(task_input: str) -> str:
     name="integrity-agent",
     description=agents.AGENTS["integrity"]["description"],
 )
-def integrity_agent(task_input: str) -> str:
-    return f"{agents.INTEGRITY_AGENT_SYSTEM}\n\nTask:\n{task_input}"
+def integrity_agent(task_input: str, journal: str = "") -> str:
+    return f"{agents.INTEGRITY_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
 
 
 # ---------------------------------------------------------------------------
@@ -82,6 +103,16 @@ def integrity_agent(task_input: str) -> str:
 def human_only_roles() -> str:
     """RACI roles that stay human-only no matter which AI model is used."""
     return agents.HUMAN_ONLY_ROLES
+
+
+@mcp.resource("aquaculture://journals")
+def journal_profiles() -> str:
+    """Known journal formatting profiles (abstract limit, keyword count,
+    citation style, AI-disclosure requirement) — only facts confirmed by
+    reading that journal's own author guide."""
+    import json
+
+    return json.dumps(journals.JOURNALS, indent=2)
 
 
 # ---------------------------------------------------------------------------
@@ -98,17 +129,48 @@ def check_citation_integrity(draft_text: str, source_texts: list[str]) -> dict:
 
 
 @mcp.tool()
-def draft_ai_disclosure(tool_name: str, reason: str) -> str:
-    """Produce the mandatory 'Declaration of generative AI use' statement text
-    (Elsevier-style) for the given tool name and reason it was used.
+def list_supported_journals() -> dict:
+    """List known journal formatting profiles (abstract word limit, keyword
+    count, citation style, AI-disclosure requirement). Use this to ask the
+    user which journal applies before drafting an abstract or AI-disclosure
+    statement — never assume one journal's limits apply to another.
     """
-    return agents.ai_disclosure_statement(tool_name, reason)
+    return journals.JOURNALS
+
+
+@mcp.tool()
+def draft_ai_disclosure(tool_name: str, reason: str, journal: str = "") -> str:
+    """Produce the 'Declaration of generative AI use' statement text for the
+    given tool name and reason it was used — IF the target journal is known to
+    require one. Pass `journal` (a key from list_supported_journals) so this
+    can check; without it, this returns a prompt to ask the user instead of
+    guessing whether a disclosure is required or what it should say.
+    """
+    if not journal:
+        known = ", ".join(sorted(journals.JOURNALS))
+        return (
+            "No journal specified. Ask the user which journal this manuscript "
+            f"is going to before drafting a disclosure statement. Known "
+            f"profiles: {known}. For any other journal, check its research-"
+            "integrity policy directly rather than assuming Elsevier's wording "
+            "applies."
+        )
+    profile = journals.get_journal(journal)
+    if profile["ai_disclosure_required"] is True and profile["ai_disclosure_template"]:
+        return agents.ai_disclosure_statement(tool_name, reason)
+    if profile["ai_disclosure_required"] is None:
+        return (
+            f"AI-disclosure requirement not confirmed for {profile['display_name']}. "
+            f"{profile['notes']}"
+        )
+    return f"{profile['display_name']} does not require an AI-use declaration."
 
 
 @mcp.tool()
 def run_agent_with_external_model(
     agent_name: str,
     task_input: str,
+    journal: str = "",
     model: str | None = None,
     base_url: str | None = None,
 ) -> str:
@@ -120,12 +182,15 @@ def run_agent_with_external_model(
 
     agent_name: one of "literature", "drafting", "results", "abstract",
         "copyedit", "integrity".
+    journal: a key from list_supported_journals, for agents whose rules are
+        journal-specific (abstract, drafting, integrity). Leave blank and the
+        agent will ask the user which journal applies instead of guessing.
     model: overrides the AQUA_MODEL environment variable for this call.
     base_url: overrides the AQUA_BASE_URL environment variable for this call
         (defaults to https://api.openai.com/v1; point this at any
         OpenAI-compatible endpoint, e.g. a local Ollama/LM Studio server).
     """
-    system_prompt = agents.get_system_prompt(agent_name)
+    system_prompt = agents.get_system_prompt(agent_name) + _journal_context(journal)
     return llm_client.call(system_prompt, task_input, model=model, base_url=base_url)
 
 
