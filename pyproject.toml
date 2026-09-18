@@ -1,0 +1,21 @@
+[project]
+name = "aquaculture-manuscript-mcp"
+version = "0.1.0"
+description = "MCP server exposing RACI-based aquaculture manuscript-writing agents to Claude Desktop, Claude Code, or any MCP-compatible client."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "mcp[cli]>=1.2.0,<2",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+aquaculture-manuscript-mcp = "aquaculture_manuscript_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aquaculture_manuscript_mcp"]
