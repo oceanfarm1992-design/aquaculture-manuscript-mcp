@@ -15,8 +15,8 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import agents, integrity, journals, llm_client, pipeline
-from .tools import bibtex_tools, calculators, citations, statistics as statistics_tool, water_quality
+from aquaculture_manuscript_mcp import agents, integrity, journals, llm_client, pipeline
+from aquaculture_manuscript_mcp.tools import bibtex_tools, calculators, citations, statistics as statistics_tool, water_quality
 
 mcp = FastMCP("aquaculture-manuscript-writing")
 
