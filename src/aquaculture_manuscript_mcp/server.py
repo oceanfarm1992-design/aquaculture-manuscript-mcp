@@ -16,7 +16,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from . import agents, integrity, journals, llm_client, pipeline
-from .tools import bibtex_tools, calculators, citations, water_quality
+from .tools import bibtex_tools, calculators, citations, statistics as statistics_tool, water_quality
 
 mcp = FastMCP("aquaculture-manuscript-writing")
 
@@ -368,6 +368,82 @@ def validate_bibtex(bibtex_text: str) -> dict:
     """Validate a .bib file: parse errors, missing required fields per entry
     type, duplicate keys, and entries with no DOI/URL to independently verify."""
     return bibtex_tools.validate_bibtex(bibtex_text)
+
+
+# ---------------------------------------------------------------------------
+# Real statistics — scipy/statsmodels compute every number; the model only
+# interprets the result. Never ask a model to compute a p-value itself.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def descriptive_stats(values: list[float]) -> dict:
+    """n, mean, SD, SEM, min, max, coefficient of variation."""
+    return statistics_tool.descriptive_stats(values)
+
+
+@mcp.tool()
+def check_normality(values: list[float]) -> dict:
+    """Shapiro-Wilk normality test."""
+    return statistics_tool.check_normality(values)
+
+
+@mcp.tool()
+def check_variance_homogeneity(groups: list[list[float]]) -> dict:
+    """Levene's test for equal variances across 2+ groups."""
+    return statistics_tool.check_variance_homogeneity(groups)
+
+
+@mcp.tool()
+def analyze_ttest(
+    group_a: list[float],
+    group_b: list[float],
+    paired: bool = False,
+    equal_var: bool | None = None,
+) -> dict:
+    """Two-sample t-test. Defaults to Welch's t-test (unequal variances);
+    pass equal_var=True to force Student's t-test, or paired=True for a
+    paired t-test."""
+    return statistics_tool.analyze_ttest(group_a, group_b, paired, equal_var)
+
+
+@mcp.tool()
+def analyze_anova(groups: list[list[float]], group_labels: list[str] | None = None) -> dict:
+    """One-way ANOVA (F-test) across 2+ groups."""
+    return statistics_tool.analyze_anova(groups, group_labels)
+
+
+@mcp.tool()
+def analyze_kruskal_wallis(groups: list[list[float]], group_labels: list[str] | None = None) -> dict:
+    """Kruskal-Wallis H-test — non-parametric alternative to one-way ANOVA."""
+    return statistics_tool.analyze_kruskal_wallis(groups, group_labels)
+
+
+@mcp.tool()
+def analyze_posthoc_tukey(groups: list[list[float]], group_labels: list[str] | None = None) -> dict:
+    """Tukey HSD pairwise post-hoc comparisons for 3+ groups. Returns every
+    pairwise adjusted p-value and CI — not auto-generated significance
+    letters (see the tool's module docstring for why that's deliberately
+    not implemented)."""
+    return statistics_tool.analyze_posthoc_tukey(groups, group_labels)
+
+
+@mcp.tool()
+def calculate_effect_size_cohens_d(group_a: list[float], group_b: list[float]) -> dict:
+    """Cohen's d for two independent groups."""
+    return statistics_tool.calculate_effect_size_cohens_d(group_a, group_b)
+
+
+@mcp.tool()
+def calculate_eta_squared(groups: list[list[float]]) -> dict:
+    """Eta-squared (variance explained) from a one-way ANOVA design."""
+    return statistics_tool.calculate_eta_squared(groups)
+
+
+@mcp.tool()
+def calculate_confidence_interval(values: list[float], confidence: float = 0.95) -> dict:
+    """Confidence interval for the mean via the t-distribution."""
+    return statistics_tool.calculate_confidence_interval(values, confidence)
 
 
 def main() -> None:

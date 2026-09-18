@@ -195,6 +195,23 @@ Two ways to use this:
 - `validate_bibtex(bibtex_text)` — parse errors, missing required fields per
   entry type, duplicate keys, entries with no DOI/URL.
 
+### Real statistics (scipy/statsmodels — the model never computes a p-value itself)
+
+- `descriptive_stats`, `check_normality` (Shapiro-Wilk), `check_variance_homogeneity` (Levene's).
+- `analyze_ttest` (Welch's by default), `analyze_anova`, `analyze_kruskal_wallis`.
+- `analyze_posthoc_tukey` — pairwise Tukey HSD with adjusted p-values and CIs
+  for 3+ groups. **Does not auto-generate a/b/c significance letters.**
+  Naive greedy letter-assignment gets this wrong in cases where a group must
+  share a letter with two other groups that are themselves significantly
+  different from each other — this is exactly why R's `multcompView` package
+  exists as dedicated, carefully-verified machinery rather than a one-line
+  loop. Getting it wrong would silently mislabel a published table, so this
+  tool returns the full, unambiguous pairwise matrix instead and leaves
+  letter-assignment to a human (or a future, properly-verified
+  implementation) — see the module docstring in `tools/statistics.py`.
+- `calculate_effect_size_cohens_d`, `calculate_eta_squared`,
+  `calculate_confidence_interval`.
+
 ## Deployment
 
 Default transport is `stdio` (what Claude Desktop/Code and most local MCP
