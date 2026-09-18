@@ -6,3 +6,7 @@ build/
 dist/
 .env
 .pytest_cache/
+
+# Scratch notes dropped in the repo root by editors/Explorer — never meant
+# to be committed (e.g. Windows' default "New Text Document.txt").
+/*.txt

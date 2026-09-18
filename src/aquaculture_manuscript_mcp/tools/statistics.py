@@ -17,6 +17,8 @@ implementation) to turn into letters.
 
 from __future__ import annotations
 
+import itertools
+
 import numpy as np
 from scipy import stats as scipy_stats
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -187,13 +189,21 @@ def analyze_posthoc_tukey(groups: list[list[float]], group_labels: list[str] | N
     all_labels = np.concatenate([[label] * len(a) for label, a in zip(labels, arrays)])
 
     result = pairwise_tukeyhsd(all_values, all_labels, alpha=0.05)
+    # Public arrays (meandiffs/confint/pvalues/reject) are ordered as
+    # itertools.combinations(sorted(groupsunique), 2) — verified directly
+    # against statsmodels' own table output rather than assumed, since this
+    # ordering isn't documented. Using these instead of the private
+    # `_results_table` attribute keeps this working across statsmodels
+    # versions that may change internal table formatting.
+    pairs = list(itertools.combinations(result.groupsunique, 2))
     pairwise = []
-    for row in result._results_table.data[1:]:
-        group1, group2, meandiff, p_adj, lower, upper, reject = row
+    for (group1, group2), meandiff, (lower, upper), p_adj, reject in zip(
+        pairs, result.meandiffs, result.confint, result.pvalues, result.reject
+    ):
         pairwise.append(
             {
-                "group1": group1,
-                "group2": group2,
+                "group1": str(group1),
+                "group2": str(group2),
                 "mean_difference": float(meandiff),
                 "p_adjusted": float(p_adj),
                 "ci_lower": float(lower),
@@ -252,11 +262,13 @@ def calculate_eta_squared(groups: list[list[float]]) -> dict:
         raise ValueError("total sum of squares is zero — eta-squared is undefined")
 
     eta_sq = ss_between / ss_total
-    magnitude = "small"
+    magnitude = "negligible"
     if eta_sq >= 0.14:
         magnitude = "large"
     elif eta_sq >= 0.06:
         magnitude = "medium"
+    elif eta_sq >= 0.01:
+        magnitude = "small"
 
     return {
         "eta_squared": float(eta_sq),

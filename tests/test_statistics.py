@@ -102,6 +102,33 @@ def test_eta_squared_large_for_well_separated_groups():
     assert result["magnitude"] == "large"
 
 
+def test_eta_squared_negligible_when_group_means_are_equal():
+    # Identical group means -> between-group SS is exactly 0, so eta-squared
+    # is exactly 0 regardless of within-group spread — an unambiguous
+    # negligible case (regression test for the negligible/small boundary).
+    same_mean_a = [9.0, 10.0, 11.0]
+    same_mean_b = [8.0, 10.0, 12.0]
+    result = stats_tool.calculate_eta_squared([same_mean_a, same_mean_b])
+    assert result["eta_squared"] == pytest.approx(0.0, abs=1e-9)
+    assert result["magnitude"] == "negligible"
+
+
+def test_posthoc_tukey_pairs_correctly_with_out_of_order_group_labels():
+    # Regression test for the public-API rewrite: group input order should
+    # not affect which mean_difference/p_value attaches to which pair.
+    result = stats_tool.analyze_posthoc_tukey(
+        [GROUP_C, GROUP_A, GROUP_B], ["C", "A", "B"]  # deliberately unsorted
+    )
+    by_pair = {frozenset((c["group1"], c["group2"])): c for c in result["pairwise_comparisons"]}
+    ab = by_pair[frozenset(("A", "B"))]
+    # B (mean ~12.3) minus A (mean ~10.1) should be positive and ~2.2,
+    # regardless of which group is labeled group1/group2.
+    expected_diff = result["group_means"]["B"] - result["group_means"]["A"]
+    actual_diff = ab["mean_difference"] if ab["group1"] == "A" else -ab["mean_difference"]
+    assert actual_diff == pytest.approx(expected_diff)
+    assert actual_diff == pytest.approx(2.2, abs=0.1)
+
+
 def test_confidence_interval_contains_mean():
     result = stats_tool.calculate_confidence_interval(GROUP_A, confidence=0.95)
     assert result["ci_lower"] < result["mean"] < result["ci_upper"]
