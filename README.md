@@ -48,7 +48,7 @@ agent is built to disclose AI assistance (see `integrity-agent` /
 Requires Python 3.10+.
 
 ```bash
-git clone https://github.com/<your-org>/aquaculture-manuscript-mcp.git
+git clone https://github.com/oceanfarm1992-design/aquaculture-manuscript-mcp.git
 cd aquaculture-manuscript-mcp
 pip install -e .
 ```
