@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import agents, integrity, journals, llm_client
+from . import agents, integrity, journals, llm_client, pipeline
 
 mcp = FastMCP("aquaculture-manuscript-writing")
 
@@ -94,6 +94,19 @@ def integrity_agent(task_input: str, journal: str = "") -> str:
     return f"{agents.INTEGRITY_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
 
 
+@mcp.prompt(
+    name="orchestrator-agent",
+    description=(
+        "Coordinates the other six agents with real handoff rules (e.g. a "
+        "citation-overlap finding sends work back to drafting-agent for a "
+        "genuine paraphrase) instead of drafting everything in one pass. "
+        "Does NOT hand off to make text merely read as less AI-generated."
+    ),
+)
+def orchestrator_agent(task_input: str, journal: str = "") -> str:
+    return f"{agents.ORCHESTRATOR_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
+
+
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
@@ -103,6 +116,14 @@ def integrity_agent(task_input: str, journal: str = "") -> str:
 def human_only_roles() -> str:
     """RACI roles that stay human-only no matter which AI model is used."""
     return agents.HUMAN_ONLY_ROLES
+
+
+@mcp.resource("aquaculture://handoff-rules")
+def handoff_rules() -> str:
+    """Trigger -> action rules for when one agent's output should hand work
+    to another. Every rule fixes a specific, nameable defect; none exist to
+    make accurate text merely read as less AI-generated."""
+    return agents.HANDOFF_RULES
 
 
 @mcp.resource("aquaculture://journals")
@@ -192,6 +213,39 @@ def run_agent_with_external_model(
     """
     system_prompt = agents.get_system_prompt(agent_name) + _journal_context(journal)
     return llm_client.call(system_prompt, task_input, model=model, base_url=base_url)
+
+
+@mcp.tool()
+def run_pipeline(
+    task_input: str,
+    source_texts: list[str] | None = None,
+    journal: str = "",
+    max_revisions: int = 2,
+    model: str | None = None,
+    base_url: str | None = None,
+) -> dict:
+    """Draft, then automatically hand off to a revision step ONLY when a real
+    citation-overlap defect is found, then copyedit — a concrete, bounded
+    version of handoff rules 1 and 2 in aquaculture://handoff-rules.
+
+    Runs against an external OpenAI-compatible model via AQUA_API_KEY (see
+    run_agent_with_external_model). Returns the final text plus a full log of
+    every step and what triggered it, so nothing happens silently. This loop
+    never rewrites text to sound "more human" — it only fixes verbatim overlap
+    with a source, and stops (reporting the issue) after max_revisions if the
+    overlap isn't resolved.
+
+    source_texts: reference texts to check the draft against. Omit if you
+        don't have specific sources to check overlap against yet.
+    """
+    return pipeline.run_pipeline(
+        task_input,
+        source_texts=source_texts,
+        journal=journal,
+        max_revisions=max_revisions,
+        model=model,
+        base_url=base_url,
+    )
 
 
 def main() -> None:

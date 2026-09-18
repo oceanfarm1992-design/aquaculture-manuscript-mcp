@@ -1,22 +1,26 @@
 # Aquaculture Manuscript MCP
 
-An [MCP](https://modelcontextprotocol.io) server that exposes six aquaculture
+An [MCP](https://modelcontextprotocol.io) server that exposes aquaculture
 manuscript-writing agents — derived from this project's RACI matrix — to Claude
 Desktop, Claude Code, or any other MCP-compatible client. Once installed and
 connected, the agents show up inside your normal chat; no copy-pasting prompts.
+They also hand work to each other on real defects (see "Agents talking to each
+other" below) rather than drafting everything in one uncoordinated pass.
 
 ## What it is
 
-Six agents, one per AI-automatable role in the RACI matrix:
+Six writing agents, one per AI-automatable role in the RACI matrix, plus an
+orchestrator that hands work between them:
 
 | Agent | RACI role | Does |
 |---|---|---|
 | `literature-agent` | Information & Lit Experts | Finds/vets real citations, never fabricates them |
 | `drafting-agent` | Writing & Editorial | Drafts Introduction, Materials & Methods, Discussion |
 | `results-agent` | Writing & Editorial (from supplied data) | Turns your real data/tables into Results prose |
-| `abstract-agent` | Writing & Editorial | Title, Abstract (<=250 words), Keywords |
+| `abstract-agent` | Writing & Editorial | Title, Abstract, Keywords (journal-specific limits) |
 | `copyedit-agent` | Writing & Editorial | Sentence-level polishing, never changes claims/data |
-| `integrity-agent` | AI & Plagiarism | Real citation-overlap check + drafts the mandatory AI-use disclosure |
+| `integrity-agent` | AI & Plagiarism | Real citation-overlap check + journal-aware AI-use disclosure |
+| `orchestrator-agent` | — | Coordinates the six above using real handoff rules |
 
 Roles that stay human-only regardless of model (PI accountability, IACUC/legal,
 physical data collection, grant sign-off, peer review, running an actual
@@ -114,6 +118,35 @@ any other OpenAI-compatible base URL to use a different provider. See
 `.env.example` for a local-development template (useful if you run/test the
 server outside an MCP client).
 
+## Agents talking to each other
+
+The agents hand work back and forth when a *specific, nameable defect* is
+found — not to make accurate text merely read as less AI-generated. Full rules
+are in `aquaculture://handoff-rules` (also in `agents.HANDOFF_RULES`); the
+short version:
+
+- `drafting-agent` output goes to `copyedit-agent`, then `integrity-agent`.
+- `integrity-agent` (or `check_citation_integrity`) finds a verbatim overlap
+  with a source -> the flagged phrase goes back to `drafting-agent` with an
+  explicit instruction to paraphrase in original sentence structure -> re-check.
+- `integrity-agent` finds an unsupported *background* claim -> handed to
+  `literature-agent` to find a real citation. An unsupported *results* claim is
+  never handed off to be invented — the loop stops and asks you instead.
+- `abstract-agent`'s numbers get cross-checked against `results-agent`'s actual
+  output before anything is called final.
+
+Two ways to use this:
+
+1. **`orchestrator-agent` prompt** — attach it in Claude Desktop (or any MCP
+   client) instead of an individual agent prompt. It instructs the connected
+   model to call the other prompts/tools in the right order and actually
+   perform the handoffs, using no API key (it runs on your client's model).
+2. **`run_pipeline` tool** — a concrete, bounded implementation of the
+   citation-overlap handoff (rules 1–2 above) that runs headlessly against an
+   external model via `AQUA_API_KEY`: draft -> check -> revise (only if a real
+   overlap was found) -> re-check -> copyedit, capped at `max_revisions` and
+   returning a full step-by-step log so nothing happens silently.
+
 ## Tools reference
 
 - `check_citation_integrity(draft_text, source_texts)` — flags any run of 3+
@@ -129,6 +162,9 @@ server outside an MCP client).
 - `run_agent_with_external_model(agent_name, task_input, journal="", model=None, base_url=None)`
   — runs any of the six agents against an external OpenAI-compatible model using
   `AQUA_API_KEY`.
+- `run_pipeline(task_input, source_texts=None, journal="", max_revisions=2, model=None, base_url=None)`
+  — the bounded draft/check/revise/copyedit loop described above; returns
+  `{final_text, revisions_used, clean, log}`.
 
 ## Development
 
