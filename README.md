@@ -254,6 +254,23 @@ Two ways to use this:
   implementation) — see the module docstring in `tools/statistics.py`.
 - `calculate_effect_size_cohens_d`, `calculate_eta_squared`,
   `calculate_confidence_interval`.
+- `analyze_two_way_anova` — two-way factorial ANOVA with interaction term
+  (Type II SS), for crossed two-treatment designs (e.g. diet x feeding
+  frequency) — the standard layout for most nutrition trials, not an edge
+  case. Validated against an independently hand-written statsmodels script
+  on a real 18-tank tilapia trial (exact match on F/eta-squared for every
+  term). Factor names are never interpolated into the underlying formula
+  string.
+- `calculate_pearson_correlation`.
+
+### Manuscript export
+
+- `export_manuscript_docx(output_path, title, abstract, keywords, sections, authors=None, tables=None, references=None, ai_disclosure=None)`
+  — assembles real structured content into an actual `.docx` file (Times New
+  Roman, title/abstract/keywords block, heading-per-section, native Word
+  tables, hanging-indent references, AI-disclosure section). Renders exactly
+  what it's given — a missing section stays missing rather than being filled
+  with something plausible-sounding.
 
 ## Deployment
 
