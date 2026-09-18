@@ -56,6 +56,25 @@ pip install -e .
 This installs the `aquaculture-manuscript-mcp` command, which runs the server
 over stdio (the standard MCP transport for desktop clients).
 
+### Find the right `command` path for your MCP client — read this before wiring it up
+
+This is the step that actually trips people up, so it gets its own section.
+**Your MCP client (Claude Desktop, Claude Code, etc.) launches the server as
+its own process — it does NOT inherit your terminal's activated virtualenv.**
+
+- If you installed with **no virtualenv** (system/user Python) and your
+  Python Scripts/bin directory is on `PATH`, the bare command
+  `aquaculture-manuscript-mcp` will work as-is in the config below.
+- If you installed inside a **virtualenv** (recommended, and what these docs'
+  own testing used), the bare command will silently fail to launch — the
+  client has no way to find it. Use the **absolute path** to that venv's copy
+  of the entry point instead:
+  - Windows: `<path-to-repo>\.venv\Scripts\aquaculture-manuscript-mcp.exe`
+  - macOS/Linux: `<path-to-repo>/.venv/bin/aquaculture-manuscript-mcp`
+
+  Find it quickly with `where aquaculture-manuscript-mcp` (Windows, venv
+  activated) or `which aquaculture-manuscript-mcp` (macOS/Linux).
+
 ## Connect it to Claude Desktop
 
 Edit Claude Desktop's config file:
@@ -63,13 +82,26 @@ Edit Claude Desktop's config file:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-Add an entry under `mcpServers`:
+Add an entry under `mcpServers`, using whichever `command` applies from the
+section above (Windows paths need double backslashes in JSON):
 
 ```json
 {
   "mcpServers": {
     "aquaculture-manuscript-writing": {
       "command": "aquaculture-manuscript-mcp"
+    }
+  }
+}
+```
+
+or, for a virtualenv install on Windows:
+
+```json
+{
+  "mcpServers": {
+    "aquaculture-manuscript-writing": {
+      "command": "C:\\path\\to\\aquaculture-manuscript-mcp\\.venv\\Scripts\\aquaculture-manuscript-mcp.exe"
     }
   }
 }
@@ -83,9 +115,20 @@ When run this way, **the prompts use Claude itself** to draft — no API key nee
 
 ## Connect it to Claude Code or any other MCP client
 
-Any MCP-compatible client works the same way — point it at the
-`aquaculture-manuscript-mcp` command over stdio. Consult that client's docs for
-where it keeps its MCP server config.
+Any MCP-compatible client works the same way — point it at the same `command`
+(same caveat about venv vs. system Python applies). For Claude Code
+specifically, add the same `mcpServers` block to a `.mcp.json` file in your
+project root instead of editing a global config file. Consult other clients'
+docs for where they keep MCP server config.
+
+### Verify it's working before wiring it into a client
+
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) can
+connect directly to the installed command and let you call tools by hand —
+useful for confirming the install before trusting a client's UI. Its exact
+CLI flags differ between v1 and v2 and are moving targets, so check its own
+README for the current invocation; point it at the same `command` path from
+the section above.
 
 ## Using a different / specific model (bring your own token)
 
@@ -233,6 +276,12 @@ pip install -e ".[dev]"
 pytest -q                    # or: pytest -q -m "not network" to skip CrossRef calls
 aquaculture-manuscript-mcp   # runs the stdio server directly, for manual testing
 ```
+
+`mcp dev src/aquaculture_manuscript_mcp/server.py` also works (launches the
+MCP Inspector against this file directly) as long as the package itself is
+installed in the environment `mcp dev` runs in — it imports `server.py` in a
+way that requires `aquaculture_manuscript_mcp` to already be a real,
+importable package, not just a loose file.
 
 ## License
 
