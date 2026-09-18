@@ -16,6 +16,7 @@ from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
 
 from . import agents, integrity, journals, llm_client, pipeline
+from .tools import bibtex_tools, calculators, citations, water_quality
 
 mcp = FastMCP("aquaculture-manuscript-writing")
 
@@ -248,8 +249,138 @@ def run_pipeline(
     )
 
 
+# ---------------------------------------------------------------------------
+# Domain calculators — pure math, no LLM call, no fabrication risk.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def calculate_fcr(
+    feed_given_g: float,
+    initial_weight_g: float,
+    final_weight_g: float,
+    dry_matter_fraction: float = 1.0,
+) -> dict:
+    """Apparent feed conversion ratio (Yossa 2014's worked formula):
+    FCR = (feed given x dry matter fraction) / (final weight - initial weight).
+    """
+    return calculators.calculate_fcr(feed_given_g, initial_weight_g, final_weight_g, dry_matter_fraction)
+
+
+@mcp.tool()
+def calculate_biomass_corrected_fcr(
+    feed_given_g: float,
+    initial_biomass_g: float,
+    final_biomass_g: float,
+    dead_or_removed_biomass_g: float = 0.0,
+    dry_matter_fraction: float = 1.0,
+) -> dict:
+    """FCR corrected for biomass removed mid-trial (mortalities/sampling).
+    Naming ("bFCR"/"corrected FCR") varies by source — state your exact
+    correction method in Methods rather than relying on a label."""
+    return calculators.calculate_biomass_corrected_fcr(
+        feed_given_g, initial_biomass_g, final_biomass_g, dead_or_removed_biomass_g, dry_matter_fraction
+    )
+
+
+@mcp.tool()
+def calculate_economic_fcr(
+    feed_given_g: float,
+    feed_cost_per_kg: float,
+    weight_gain_g: float,
+    product_value_per_kg: float,
+) -> dict:
+    """Economic FCR: feed cost / value of weight gain."""
+    return calculators.calculate_economic_fcr(feed_given_g, feed_cost_per_kg, weight_gain_g, product_value_per_kg)
+
+
+@mcp.tool()
+def calculate_sgr(initial_weight_g: float, final_weight_g: float, days: float) -> dict:
+    """Specific growth rate: SGR (%/day) = (ln(final) - ln(initial)) / days x 100."""
+    return calculators.calculate_sgr(initial_weight_g, final_weight_g, days)
+
+
+@mcp.tool()
+def calculate_stocking_density(
+    biomass_kg: float,
+    volume_m3: float | None = None,
+    area_m2: float | None = None,
+) -> dict:
+    """Stocking density as biomass per volume (kg/m3) and/or per area (kg/m2)."""
+    return calculators.calculate_stocking_density(biomass_kg, volume_m3, area_m2)
+
+
+@mcp.tool()
+def calculate_survival_rate(initial_count: int, final_count: int) -> dict:
+    """Survival % and cumulative mortality % from initial and final counts."""
+    return calculators.calculate_survival_rate(initial_count, final_count)
+
+
+@mcp.tool()
+def calculate_unionized_ammonia(
+    total_ammonia_nitrogen_mg_l: float, ph: float, temperature_c: float
+) -> dict:
+    """Un-ionized ammonia (NH3-N) fraction and concentration from TAN, pH,
+    and temperature (Emerson et al. 1975 equilibrium equation)."""
+    return water_quality.calculate_unionized_ammonia(total_ammonia_nitrogen_mg_l, ph, temperature_c)
+
+
+@mcp.tool()
+def list_water_quality_reference_species() -> dict:
+    """Species/parameters with a cited water-quality reference range
+    available. A species not listed here has no sourced range in this tool —
+    that means "not yet sourced", not "no threshold exists"."""
+    return water_quality.list_supported_species()
+
+
+@mcp.tool()
+def check_water_parameter(species: str, parameter: str, measured_value: float) -> dict:
+    """Check a measured water-quality value against a cited reference range
+    (see list_water_quality_reference_species for what's covered). Always
+    returns the source and a caveat — never a bare pass/fail."""
+    return water_quality.check_water_parameter(species, parameter, measured_value)
+
+
+# ---------------------------------------------------------------------------
+# Real citation lookups (CrossRef) and BibTeX validation.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def resolve_doi_metadata(doi: str) -> dict:
+    """Fetch real citation metadata for a DOI from the CrossRef registry.
+    Raises if the DOI isn't registered — treat that as "could not verify
+    this citation", not as permission to cite it anyway."""
+    return citations.resolve_doi_metadata(doi)
+
+
+@mcp.tool()
+def search_citations(query: str, rows: int = 5) -> list[dict]:
+    """Search CrossRef for real candidate works matching a topic/author/title
+    query. Use this to find a verifiable DOI before citing something you only
+    recall the gist of — confirm a result actually supports your claim before
+    citing it; don't cite from this list on title match alone."""
+    return citations.search_works(query, rows)
+
+
+@mcp.tool()
+def validate_bibtex(bibtex_text: str) -> dict:
+    """Validate a .bib file: parse errors, missing required fields per entry
+    type, duplicate keys, and entries with no DOI/URL to independently verify."""
+    return bibtex_tools.validate_bibtex(bibtex_text)
+
+
 def main() -> None:
-    mcp.run()
+    import os
+
+    transport = os.environ.get("AQUA_TRANSPORT", "stdio")
+    if transport not in ("stdio", "sse", "streamable-http"):
+        raise ValueError(
+            f"Unknown AQUA_TRANSPORT '{transport}'. Use 'stdio' (default, for "
+            "Claude Desktop/Code and other local MCP clients), 'sse', or "
+            "'streamable-http' (for remote/cloud deployment)."
+        )
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":

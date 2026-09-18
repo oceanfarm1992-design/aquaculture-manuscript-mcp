@@ -166,12 +166,54 @@ Two ways to use this:
   — the bounded draft/check/revise/copyedit loop described above; returns
   `{final_text, revisions_used, clean, log}`.
 
+### Domain calculators (pure math, no LLM call, fully unit-tested)
+
+- `calculate_fcr`, `calculate_biomass_corrected_fcr`, `calculate_economic_fcr`
+  — feed conversion ratio and its variants (formula documented per function;
+  terminology for "eFCR"/"bFCR" varies by source, so state your exact method
+  in Methods rather than relying on the label).
+- `calculate_sgr` — specific growth rate, `SGR = (ln(Wf) - ln(Wi)) / days x 100`.
+- `calculate_stocking_density` — biomass per volume (kg/m3) and/or area (kg/m2).
+- `calculate_survival_rate` — survival % and cumulative mortality %.
+- `calculate_unionized_ammonia` — NH3-N fraction/concentration from TAN, pH,
+  and temperature (Emerson et al. 1975 equilibrium equation — general aquatic
+  chemistry, not species-specific).
+- `check_water_parameter(species, parameter, measured_value)` /
+  `list_water_quality_reference_species()` — checks a value against a cited
+  reference range. **Only two species are covered** (Nile tilapia, Pacific
+  whiteleg shrimp) because those are what a source-backed range could
+  actually be found for — an unlisted species means "not yet sourced," not
+  "no threshold exists." Every result carries its source and a caveat that
+  it's a sanity check, not a citable threshold by itself.
+
+### Real citation tools
+
+- `resolve_doi_metadata(doi)` / `search_citations(query, rows=5)` — real
+  lookups against the CrossRef registry (api.crossref.org), so the
+  literature-agent's "never fabricate a citation" rule has an actual external
+  source to check against instead of relying on model memory.
+- `validate_bibtex(bibtex_text)` — parse errors, missing required fields per
+  entry type, duplicate keys, entries with no DOI/URL.
+
+## Deployment
+
+Default transport is `stdio` (what Claude Desktop/Code and most local MCP
+clients expect). For a remote/cloud deployment, set `AQUA_TRANSPORT=sse` or
+`AQUA_TRANSPORT=streamable-http` in the environment before running the
+server. A `Dockerfile` is included:
+
+```bash
+docker build -t aquaculture-manuscript-mcp .
+docker run -e AQUA_TRANSPORT=stdio -i aquaculture-manuscript-mcp
+```
+
 ## Development
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # or .venv\Scripts\activate on Windows
-pip install -e .
+pip install -e ".[dev]"
+pytest -q                    # or: pytest -q -m "not network" to skip CrossRef calls
 aquaculture-manuscript-mcp   # runs the stdio server directly, for manual testing
 ```
 
