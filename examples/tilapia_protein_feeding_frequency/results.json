@@ -1,0 +1,1643 @@
+{
+  "n_tanks": 18,
+  "responses": {
+    "final_weight_g": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 27.27333333333333,
+          "sd": 0.9473295801004706,
+          "sem": 0.5469409880823018,
+          "min": 26.29,
+          "max": 28.18,
+          "cv_percent": 3.4734646055993794
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 29.25,
+          "sd": 1.2842118205342918,
+          "sem": 0.7414400402819729,
+          "min": 28.17,
+          "max": 30.67,
+          "cv_percent": 4.390467762510399
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 32.166666666666664,
+          "sd": 0.9577229940506474,
+          "sem": 0.5529416284242357,
+          "min": 31.55,
+          "max": 33.27,
+          "cv_percent": 2.9773771835771425
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 34.08,
+          "sd": 1.3125928538583465,
+          "sem": 0.7578258375114955,
+          "min": 32.65,
+          "max": 35.23,
+          "cv_percent": 3.851504852870735
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 33.45333333333333,
+          "sd": 1.3890404361764772,
+          "sem": 0.8019628697417643,
+          "min": 32.41,
+          "max": 35.03,
+          "cv_percent": 4.152173483987078
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 35.23,
+          "sd": 0.499599839871872,
+          "sem": 0.28844410203711923,
+          "min": 34.67,
+          "max": 35.63,
+          "cv_percent": 1.418109111188964
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 28.261666666666667,
+          "sd": 1.480140759072146,
+          "sem": 0.6042649345370882,
+          "min": 26.29,
+          "max": 30.67,
+          "cv_percent": 5.237273429517531
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 33.123333333333335,
+          "sd": 1.4677556563224903,
+          "sem": 0.599208737512322,
+          "min": 31.55,
+          "max": 35.23,
+          "cv_percent": 4.431183424542086
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 34.34166666666667,
+          "sd": 1.348546130715101,
+          "sem": 0.5505416524760972,
+          "min": 32.41,
+          "max": 35.63,
+          "cv_percent": 3.926851145008787
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 30.964444444444446,
+          "sd": 2.984979527195753,
+          "sem": 0.9949931757319176,
+          "min": 26.29,
+          "max": 35.03,
+          "cv_percent": 9.64002287382007
+        },
+        "F3": {
+          "n": 9,
+          "mean": 32.85333333333333,
+          "sd": 2.908074964645856,
+          "sem": 0.9693583215486187,
+          "min": 28.17,
+          "max": 35.63,
+          "cv_percent": 8.851689218686657
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9436909910957592,
+        "p_value": 0.3347152533471324,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.21583772285251196,
+        "p_value": 0.9490253546011547,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 124.17307777777802,
+            "df": 2.0,
+            "f_statistic": 50.574171622000826,
+            "p_value": 1.4229783114778341e-06,
+            "eta_squared": 0.8011601633981261,
+            "significant_at_alpha_0.05": true
+          },
+          "feeding_frequency": {
+            "sum_sq": 16.055555555555543,
+            "df": 1.0,
+            "f_statistic": 13.078461719478286,
+            "p_value": 0.003537745200695406,
+            "eta_squared": 0.10358985814426308,
+            "significant_at_alpha_0.05": true
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 0.03134444444444764,
+            "df": 2.0,
+            "f_statistic": 0.012766207789152951,
+            "p_value": 0.9873283247400868,
+            "eta_squared": 0.00020223321095155442,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 14.731600000000014,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.09504774524665922,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 28.261666666666667,
+          "CP30": 33.123333333333335,
+          "CP35": 34.34166666666667
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": 4.861666666666668,
+            "p_adjusted": 8.557702421163604e-05,
+            "ci_lower": 2.7121041814675233,
+            "ci_upper": 7.0112291518658125,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": 6.080000000000002,
+            "p_adjusted": 6.8586123453950876e-06,
+            "ci_lower": 3.930437514800857,
+            "ci_upper": 8.229562485199146,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": 1.2183333333333337,
+            "p_adjusted": 0.33144312053584357,
+            "ci_lower": -0.9312291518658111,
+            "ci_upper": 3.3678958185324785,
+            "significant_at_alpha_0.05": false
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      }
+    },
+    "weight_gain_pct": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 454.422709499689,
+          "sd": 21.171215033130952,
+          "sem": 12.223206698449609,
+          "min": 430.0403225806451,
+          "max": 468.1451612903226,
+          "cv_percent": 4.658925399313795
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 484.68134595004653,
+          "sd": 23.77651840345949,
+          "sem": 13.72737930062943,
+          "min": 464.6484375,
+          "max": 510.9561752988049,
+          "cv_percent": 4.905597997969991
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 549.1674555655278,
+          "sd": 27.05192884143843,
+          "sem": 15.618438398703079,
+          "min": 532.2645290581162,
+          "max": 580.3680981595094,
+          "cv_percent": 4.925989070779985
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 581.2140862327315,
+          "sd": 28.049422090345665,
+          "sem": 16.194341394474506,
+          "min": 554.3086172344689,
+          "max": 610.282258064516,
+          "cv_percent": 4.826005211290429
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 575.9375862891898,
+          "sd": 29.631564168231943,
+          "sem": 17.10779154903838,
+          "min": 545.6175298804781,
+          "max": 604.8289738430584,
+          "cv_percent": 5.144926268686577
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 610.7852052893945,
+          "sd": 10.190614051046186,
+          "sem": 5.883553765579099,
+          "min": 600.4040404040404,
+          "max": 620.7739307535642,
+          "cv_percent": 1.6684448088780734
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 469.55202772486774,
+          "sd": 26.078588790387393,
+          "sem": 10.646539291385716,
+          "min": 430.0403225806451,
+          "max": 510.9561752988049,
+          "cv_percent": 5.55392954360066
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 565.1907708991297,
+          "sd": 30.257672326104263,
+          "sem": 12.352643000547804,
+          "min": 532.2645290581162,
+          "max": 610.282258064516,
+          "cv_percent": 5.353532627217012
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 593.361395789292,
+          "sd": 27.51469151039858,
+          "sem": 11.232825771760787,
+          "min": 545.6175298804781,
+          "max": 620.7739307535642,
+          "cv_percent": 4.637088240935934
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 526.5092504514689,
+          "sd": 59.7653596129946,
+          "sem": 19.921786537664868,
+          "min": 430.0403225806451,
+          "max": 604.8289738430584,
+          "cv_percent": 11.351245882526708
+        },
+        "F3": {
+          "n": 9,
+          "mean": 558.8935458240576,
+          "sd": 60.21532966413672,
+          "sem": 20.07177655471224,
+          "min": 464.6484375,
+          "max": 620.7739307535642,
+          "cv_percent": 10.774024877197776
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9386037441738354,
+        "p_value": 0.2742340631440664,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.20794778309038875,
+        "p_value": 0.9527215232446257,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 50538.22584633361,
+            "df": 2.0,
+            "f_statistic": 43.14591638073368,
+            "p_value": 3.3111806692573496e-06,
+            "eta_squared": 0.8111864526315322,
+            "significant_at_alpha_0.05": true
+          },
+          "feeding_frequency": {
+            "sum_sq": 4719.341640505773,
+            "df": 1.0,
+            "f_statistic": 8.058071544201175,
+            "p_value": 0.014933409496317327,
+            "eta_squared": 0.07574990890575321,
+            "significant_at_alpha_0.05": true
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 16.050609901940287,
+            "df": 2.0,
+            "f_statistic": 0.013702860776999982,
+            "p_value": 0.9864060071332486,
+            "eta_squared": 0.00025762751048119846,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 7027.99663361433,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.11280601095223347,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 469.55202772486774,
+          "CP30": 565.1907708991297,
+          "CP35": 593.361395789292
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": 95.63874317426195,
+            "p_adjusted": 7.952154947887813e-05,
+            "ci_lower": 53.64248925764925,
+            "ci_upper": 137.63499709087463,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": 123.80936806442429,
+            "p_adjusted": 4.175249416316085e-06,
+            "ci_lower": 81.8131141478116,
+            "ci_upper": 165.80562198103698,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": 28.170624890162344,
+            "p_adjusted": 0.22246715090559444,
+            "ci_lower": -13.82562902645035,
+            "ci_upper": 70.16687880677503,
+            "significant_at_alpha_0.05": false
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      }
+    },
+    "sgr": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 3.057613971356013,
+          "sd": 0.06895766345661271,
+          "sem": 0.039812725559362966,
+          "min": 2.9781837464374177,
+          "max": 3.1021549388101755,
+          "cv_percent": 2.255276961140744
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 3.1524117894006807,
+          "sd": 0.07211842397841083,
+          "sem": 0.041637591497467055,
+          "min": 3.0911305660300687,
+          "max": 3.2318840078973614,
+          "cv_percent": 2.2877221884810166
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 3.3391970969941647,
+          "sd": 0.07356991908048323,
+          "sem": 0.04247561258537598,
+          "min": 3.2931029986139193,
+          "max": 3.4240424759707233,
+          "cv_percent": 2.20322182079963
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 3.4252546496380973,
+          "sd": 0.0734002390185686,
+          "sem": 0.04237764775595346,
+          "min": 3.354301689212523,
+          "max": 3.5008790207434104,
+          "cv_percent": 2.142913345912073
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 3.411228582409013,
+          "sd": 0.07846202189211958,
+          "sem": 0.045300069460577554,
+          "min": 3.3304233633032463,
+          "max": 3.4871160662515317,
+          "cv_percent": 2.300110356038047
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 3.5020205953501473,
+          "sd": 0.0256145622620091,
+          "sem": 0.014788574417145383,
+          "min": 3.4758699698505944,
+          "max": 3.527063129555255,
+          "cv_percent": 0.7314223764423077
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 3.105012880378347,
+          "sd": 0.08172195826348685,
+          "sem": 0.03336284975442767,
+          "min": 2.9781837464374177,
+          "max": 3.2318840078973614,
+          "cv_percent": 2.6319362080562128
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 3.382225873316131,
+          "sd": 0.0808815302941017,
+          "sem": 0.033019746472668164,
+          "min": 3.2931029986139193,
+          "max": 3.5008790207434104,
+          "cv_percent": 2.3913698648044677
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 3.4566245888795795,
+          "sd": 0.07209656549295825,
+          "sem": 0.029433299610816144,
+          "min": 3.3304233633032463,
+          "max": 3.527063129555255,
+          "cv_percent": 2.0857505245117585
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 3.2693465502530636,
+          "sd": 0.17398593590071898,
+          "sem": 0.05799531196690633,
+          "min": 2.9781837464374177,
+          "max": 3.4871160662515317,
+          "cv_percent": 5.32173427400199
+        },
+        "F3": {
+          "n": 9,
+          "mean": 3.359895678129641,
+          "sd": 0.16772450996015223,
+          "sem": 0.05590816998671741,
+          "min": 3.0911305660300687,
+          "max": 3.527063129555255,
+          "cv_percent": 4.991955882794543
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9309734441968772,
+        "p_value": 0.20199117255933136,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.1872619225753682,
+        "p_value": 0.961862646924629,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 0.41202601177234416,
+            "df": 2.0,
+            "f_statistic": 44.83620301086635,
+            "p_value": 2.7031420606705664e-06,
+            "eta_squared": 0.8173220506219543,
+            "significant_at_alpha_0.05": true
+          },
+          "feeding_frequency": {
+            "sum_sq": 0.03689615051643966,
+            "df": 1.0,
+            "f_statistic": 8.02999445476082,
+            "p_value": 0.015071214559959885,
+            "eta_squared": 0.07318964467907135,
+            "significant_at_alpha_0.05": true
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 5.7426914054311145e-05,
+            "df": 2.0,
+            "f_statistic": 0.0062491316161109745,
+            "p_value": 0.9937735853893169,
+            "eta_squared": 0.00011391582525060072,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 0.055137498374581845,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.10937438887372389,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 3.105012880378347,
+          "CP30": 3.382225873316131,
+          "CP35": 3.4566245888795795
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": 0.277212992937784,
+            "p_adjusted": 5.431759348450971e-05,
+            "ci_lower": 0.15970887173382917,
+            "ci_upper": 0.3947171141417388,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": 0.35161170850123247,
+            "p_adjusted": 3.4860163559136126e-06,
+            "ci_lower": 0.23410758729727763,
+            "ci_upper": 0.4691158297051873,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": 0.07439871556344846,
+            "p_adjusted": 0.25831200997673665,
+            "ci_lower": -0.04310540564050638,
+            "ci_upper": 0.1919028367674033,
+            "significant_at_alpha_0.05": false
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      }
+    },
+    "fcr": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 1.4693432352485487,
+          "sd": 0.0191990753235379,
+          "sem": 0.01108459130623651,
+          "min": 1.447355727820844,
+          "max": 1.4827898711683698,
+          "cv_percent": 1.3066433262810957
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 1.402367174872812,
+          "sd": 0.0022647744236139237,
+          "sem": 0.0013075681231272784,
+          "min": 1.3999469026548672,
+          "max": 1.40443516585479,
+          "cv_percent": 0.1614965370120937
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 1.2841312021874554,
+          "sd": 0.030414236214288168,
+          "sem": 0.01755966746551614,
+          "min": 1.2624247104247104,
+          "max": 1.318893587033122,
+          "cv_percent": 2.3684679698210735
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 1.2250523984295116,
+          "sd": 0.022721789240304695,
+          "sem": 0.013118431134359858,
+          "min": 1.2003640819184318,
+          "max": 1.2450871338524288,
+          "cv_percent": 1.8547606020308596
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 1.2247381765802006,
+          "sd": 0.049904827941759766,
+          "sem": 0.02881256584603696,
+          "min": 1.1673770491803281,
+          "max": 1.2581902860944778,
+          "cv_percent": 4.07473441230578
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 1.2260761374594804,
+          "sd": 0.04030415514299402,
+          "sem": 0.023269614821268037,
+          "min": 1.1847028086218159,
+          "max": 1.2652184424106374,
+          "cv_percent": 3.2872473341261808
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 1.4358552050606803,
+          "sd": 0.038668220512764695,
+          "sem": 0.01578623491961587,
+          "min": 1.3999469026548672,
+          "max": 1.4827898711683698,
+          "cv_percent": 2.6930445616297742
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 1.2545918003084833,
+          "sd": 0.04029409019139932,
+          "sem": 0.016449993436435485,
+          "min": 1.2003640819184318,
+          "max": 1.318893587033122,
+          "cv_percent": 3.2117291202996596
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 1.2254071570198406,
+          "sd": 0.040577133354504184,
+          "sem": 0.01656554532390053,
+          "min": 1.1673770491803281,
+          "max": 1.2652184424106374,
+          "cv_percent": 3.311318456241659
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 1.3260708713387348,
+          "sd": 0.11469029363186191,
+          "sem": 0.0382300978772873,
+          "min": 1.1673770491803281,
+          "max": 1.4827898711683698,
+          "cv_percent": 8.648881150377456
+        },
+        "F3": {
+          "n": 9,
+          "mean": 1.2844985702539347,
+          "sd": 0.09138638815595707,
+          "sem": 0.03046212938531902,
+          "min": 1.1847028086218159,
+          "max": 1.40443516585479,
+          "cv_percent": 7.114557405687943
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9651518512988917,
+        "p_value": 0.7031733561879071,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.5381367128633713,
+        "p_value": 0.7441487795240194,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 0.15599309246088675,
+            "df": 2.0,
+            "f_statistic": 78.91783379909084,
+            "p_value": 1.2442683663364136e-07,
+            "eta_squared": 0.8674965778003215,
+            "significant_at_alpha_0.05": true
+          },
+          "feeding_frequency": {
+            "sum_sq": 0.007777152978683675,
+            "df": 1.0,
+            "f_statistic": 7.86901594832802,
+            "p_value": 0.01589094674146298,
+            "eta_squared": 0.04324969450637246,
+            "significant_at_alpha_0.05": true
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 0.004189678805673881,
+            "df": 2.0,
+            "f_statistic": 2.119583440790166,
+            "p_value": 0.1628189715393819,
+            "eta_squared": 0.023299313890555395,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 0.01185991188187052,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.06595441380275052,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 1.4358552050606803,
+          "CP30": 1.2545918003084833,
+          "CP35": 1.2254071570198406
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": -0.18126340475219704,
+            "p_adjusted": 2.9607422011856954e-06,
+            "ci_lower": -0.24103249864349616,
+            "ci_upper": -0.12149431086089793,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": -0.21044804804083972,
+            "p_adjusted": 4.5623829236784985e-07,
+            "ci_lower": -0.27021714193213886,
+            "ci_upper": -0.1506789541495406,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": -0.029184643288642675,
+            "p_adjusted": 0.43362536629181203,
+            "ci_lower": -0.08895373717994179,
+            "ci_upper": 0.030584450602656445,
+            "significant_at_alpha_0.05": false
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      }
+    },
+    "per": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 2.722616779542322,
+          "sd": 0.0358258662886427,
+          "sem": 0.020684073545699403,
+          "min": 2.697617563875174,
+          "max": 2.76366060057844,
+          "cv_percent": 1.3158615108023064
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 2.8523250039039154,
+          "sd": 0.004608105532231512,
+          "sem": 0.0026604909694880672,
+          "min": 2.848120082186532,
+          "max": 2.857251223181663,
+          "cv_percent": 0.16155611741034062
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 2.5967479737751673,
+          "sd": 0.06075038426584746,
+          "sem": 0.035074250709260235,
+          "min": 2.5273709464550014,
+          "max": 2.640421488749154,
+          "cv_percent": 2.3394794134576022
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 2.721599705635322,
+          "sd": 0.050762676772273696,
+          "sem": 0.029307845099258184,
+          "min": 2.6771888028588444,
+          "max": 2.7769352511831014,
+          "cv_percent": 1.8651779197052716
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 2.335505079339667,
+          "sd": 0.09736865390654013,
+          "sem": 0.05621581854357246,
+          "min": 2.270835253395299,
+          "max": 2.447489317310971,
+          "cv_percent": 4.169061962993882
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 2.331999532545636,
+          "sd": 0.07690837542923609,
+          "sem": 0.04440307125700626,
+          "min": 2.258221000714395,
+          "max": 2.411695858530645,
+          "cv_percent": 3.2979584410671845
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 2.787470891723119,
+          "sd": 0.07462679125409534,
+          "sem": 0.03046625995228799,
+          "min": 2.697617563875174,
+          "max": 2.857251223181663,
+          "cv_percent": 2.677222261788844
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 2.6591738397052445,
+          "sd": 0.0847547632948012,
+          "sem": 0.03460098722377196,
+          "min": 2.5273709464550014,
+          "max": 2.7769352511831014,
+          "cv_percent": 3.187259216727095
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 2.3337523059426517,
+          "sd": 0.07849782065377299,
+          "sem": 0.03204660108704174,
+          "min": 2.258221000714395,
+          "max": 2.447489317310971,
+          "cv_percent": 3.363588348852903
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 2.5516232775523857,
+          "sd": 0.18126492624291024,
+          "sem": 0.06042164208097008,
+          "min": 2.270835253395299,
+          "max": 2.76366060057844,
+          "cv_percent": 7.103906279487561
+        },
+        "F3": {
+          "n": 9,
+          "mean": 2.6353080806949576,
+          "sd": 0.2389147230249829,
+          "sem": 0.07963824100832763,
+          "min": 2.258221000714395,
+          "max": 2.857251223181663,
+          "cv_percent": 9.065912436392585
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9622484581322429,
+        "p_value": 0.6455628644310156,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.5115528542094979,
+        "p_value": 0.7627002147263351,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 0.6564397265510044,
+            "df": 2.0,
+            "f_statistic": 85.74284097659438,
+            "p_value": 7.82482068881926e-08,
+            "eta_squared": 0.8740736625376883,
+            "significant_at_alpha_0.05": true
+          },
+          "feeding_frequency": {
+            "sum_sq": 0.031514158246550156,
+            "df": 1.0,
+            "f_statistic": 8.232632333945835,
+            "p_value": 0.014109270907969701,
+            "eta_squared": 0.041962261889727556,
+            "significant_at_alpha_0.05": true
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 0.017122542664214084,
+            "df": 2.0,
+            "f_statistic": 2.2365121935663184,
+            "p_value": 0.14943331403416757,
+            "eta_squared": 0.02279929591876181,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 0.04593547769639653,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.0611647796538224,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 2.787470891723119,
+          "CP30": 2.6591738397052445,
+          "CP35": 2.3337523059426517
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": -0.12829705201787434,
+            "p_adjusted": 0.03403872134504504,
+            "ci_lower": -0.2473735414582619,
+            "ci_upper": -0.009220562577486768,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": -0.4537185857804671,
+            "p_adjusted": 1.6390880652750184e-07,
+            "ci_lower": -0.5727950752208546,
+            "ci_upper": -0.3346420963400795,
+            "significant_at_alpha_0.05": true
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": -0.32542153376259275,
+            "p_adjusted": 1.0289591452661284e-05,
+            "ci_lower": -0.4444980232029803,
+            "ci_upper": -0.20634504432220518,
+            "significant_at_alpha_0.05": true
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      }
+    },
+    "survival_pct": {
+      "cell_stats": {
+        "CP25_F2": {
+          "n": 3,
+          "mean": 98.33333333333333,
+          "sd": 2.8867513459481287,
+          "sem": 1.6666666666666667,
+          "min": 95.0,
+          "max": 100.0,
+          "cv_percent": 2.935679334862504
+        },
+        "CP25_F3": {
+          "n": 3,
+          "mean": 90.0,
+          "sd": 5.0,
+          "sem": 2.886751345948129,
+          "min": 85.0,
+          "max": 95.0,
+          "cv_percent": 5.555555555555555
+        },
+        "CP30_F2": {
+          "n": 3,
+          "mean": 98.33333333333333,
+          "sd": 2.8867513459481287,
+          "sem": 1.6666666666666667,
+          "min": 95.0,
+          "max": 100.0,
+          "cv_percent": 2.935679334862504
+        },
+        "CP30_F3": {
+          "n": 3,
+          "mean": 96.66666666666667,
+          "sd": 2.8867513459481287,
+          "sem": 1.6666666666666667,
+          "min": 95.0,
+          "max": 100.0,
+          "cv_percent": 2.9862944958084086
+        },
+        "CP35_F2": {
+          "n": 3,
+          "mean": 96.66666666666667,
+          "sd": 5.773502691896257,
+          "sem": 3.3333333333333335,
+          "min": 90.0,
+          "max": 100.0,
+          "cv_percent": 5.972588991616817
+        },
+        "CP35_F3": {
+          "n": 3,
+          "mean": 95.0,
+          "sd": 5.0,
+          "sem": 2.886751345948129,
+          "min": 90.0,
+          "max": 100.0,
+          "cv_percent": 5.263157894736842
+        }
+      },
+      "cp_main_means": {
+        "CP25": {
+          "n": 6,
+          "mean": 94.16666666666667,
+          "sd": 5.845225972250061,
+          "sem": 2.386303510546059,
+          "min": 85.0,
+          "max": 100.0,
+          "cv_percent": 6.207319616548737
+        },
+        "CP30": {
+          "n": 6,
+          "mean": 97.5,
+          "sd": 2.7386127875258306,
+          "sem": 1.118033988749895,
+          "min": 95.0,
+          "max": 100.0,
+          "cv_percent": 2.808833628231621
+        },
+        "CP35": {
+          "n": 6,
+          "mean": 95.83333333333333,
+          "sd": 4.915960401250875,
+          "sem": 2.006932429798716,
+          "min": 90.0,
+          "max": 100.0,
+          "cv_percent": 5.129697810000914
+        }
+      },
+      "ff_main_means": {
+        "F2": {
+          "n": 9,
+          "mean": 97.77777777777777,
+          "sd": 3.632415786283895,
+          "sem": 1.2108052620946317,
+          "min": 90.0,
+          "max": 100.0,
+          "cv_percent": 3.71497069051762
+        },
+        "F3": {
+          "n": 9,
+          "mean": 93.88888888888889,
+          "sd": 4.859126579037751,
+          "sem": 1.6197088596792504,
+          "min": 85.0,
+          "max": 100.0,
+          "cv_percent": 5.175401090099379
+        }
+      },
+      "normality_of_residuals": {
+        "test": "Shapiro-Wilk",
+        "statistic": 0.9408151229360177,
+        "p_value": 0.29922433564132966,
+        "normal_at_alpha_0.05": true,
+        "n": 18,
+        "note": "n < 3 or n very large reduces this test's reliability; inspect a Q-Q plot for borderline cases."
+      },
+      "levene_across_cells": {
+        "test": "Levene",
+        "statistic": 0.20000000000000004,
+        "p_value": 0.9563299673519542,
+        "equal_variances_at_alpha_0.05": true
+      },
+      "two_way_anova": {
+        "test": "two-way ANOVA (Type II sum of squares)",
+        "terms": {
+          "protein": {
+            "sum_sq": 33.33333333333392,
+            "df": 2.0,
+            "f_statistic": 0.9230769230769392,
+            "p_value": 0.423752779149514,
+            "eta_squared": 0.0919540229885074,
+            "significant_at_alpha_0.05": false
+          },
+          "feeding_frequency": {
+            "sum_sq": 68.05555555555588,
+            "df": 1.0,
+            "f_statistic": 3.769230769230787,
+            "p_value": 0.07605177686381737,
+            "eta_squared": 0.18773946360153357,
+            "significant_at_alpha_0.05": false
+          },
+          "protein:feeding_frequency (interaction)": {
+            "sum_sq": 44.444444444443356,
+            "df": 2.0,
+            "f_statistic": 1.2307692307692006,
+            "p_value": 0.3264378392677053,
+            "eta_squared": 0.12260536398467138,
+            "significant_at_alpha_0.05": false
+          },
+          "Residual": {
+            "sum_sq": 216.66666666666669,
+            "df": 12.0,
+            "f_statistic": null,
+            "p_value": null,
+            "eta_squared": 0.5977011494252877,
+            "significant_at_alpha_0.05": null
+          }
+        },
+        "note": "eta_squared here is simple (non-partial) eta-squared: term SS / total SS. A significant interaction term means the two factors' effects are not simply additive \u2014 interpret each main effect with that in mind rather than in isolation."
+      },
+      "tukey_protein": {
+        "test": "Tukey HSD",
+        "group_means": {
+          "CP25": 94.16666666666667,
+          "CP30": 97.5,
+          "CP35": 95.83333333333333
+        },
+        "pairwise_comparisons": [
+          {
+            "group1": "CP25",
+            "group2": "CP30",
+            "mean_difference": 3.3333333333333286,
+            "p_adjusted": 0.45316229778158035,
+            "ci_lower": -3.6917624567275134,
+            "ci_upper": 10.35842912339417,
+            "significant_at_alpha_0.05": false
+          },
+          {
+            "group1": "CP25",
+            "group2": "CP35",
+            "mean_difference": 1.6666666666666572,
+            "p_adjusted": 0.8135749439449077,
+            "ci_lower": -5.358429123394185,
+            "ci_upper": 8.6917624567275,
+            "significant_at_alpha_0.05": false
+          },
+          {
+            "group1": "CP30",
+            "group2": "CP35",
+            "mean_difference": -1.6666666666666714,
+            "p_adjusted": 0.8135749439449049,
+            "ci_lower": -8.691762456727513,
+            "ci_upper": 5.3584291233941705,
+            "significant_at_alpha_0.05": false
+          }
+        ],
+        "note": "Use this pairwise matrix to assign significance letters by hand \u2014 auto letter-grouping isn't implemented here (see module docstring)."
+      },
+      "kruskal_wallis_cells": {
+        "test": "Kruskal-Wallis",
+        "h_statistic": 5.92789598108746,
+        "p_value": 0.3132983117761163,
+        "significant_at_alpha_0.05": false,
+        "group_medians": {
+          "CP25_F2": 100.0,
+          "CP25_F3": 90.0,
+          "CP30_F2": 100.0,
+          "CP30_F3": 95.0,
+          "CP35_F2": 100.0,
+          "CP35_F3": 95.0
+        }
+      }
+    }
+  },
+  "initial_weight": {
+    "n": 18,
+    "mean": 4.965,
+    "sd": 0.07180447307056273,
+    "sem": 0.016924476609240582,
+    "min": 4.84,
+    "max": 5.12,
+    "cv_percent": 1.4462129520757852
+  },
+  "initial_weight_anova": {
+    "test": "one-way ANOVA",
+    "f_statistic": 0.5352558139534891,
+    "p_value": 0.7461576991622358,
+    "df_between": 5,
+    "df_within": 12,
+    "significant_at_alpha_0.05": false,
+    "group_means": {
+      "group_1": 4.920000000000001,
+      "group_2": 5.003333333333334,
+      "group_3": 4.956666666666666,
+      "group_4": 5.003333333333333,
+      "group_5": 4.949999999999999,
+      "group_6": 4.956666666666666
+    },
+    "note": "Significant ANOVA indicates at least one group differs \u2014 run analyze_posthoc_tukey for pairwise comparisons."
+  },
+  "sgr_vs_fcr": {
+    "r": -0.8839699752589646,
+    "r_squared": 0.7814029171593345,
+    "p_value": 1.1409957816499796e-06,
+    "n": 18,
+    "significant_at_alpha_0.05": true
+  },
+  "water_quality": {
+    "temp": {
+      "n": 18,
+      "mean": 27.08888888888889,
+      "sd": 0.18435543958499098,
+      "sem": 0.04345299382639134,
+      "min": 26.7,
+      "max": 27.3,
+      "cv_percent": 0.680557406179212
+    },
+    "do": {
+      "n": 18,
+      "mean": 5.922222222222222,
+      "sd": 0.15663954708954675,
+      "sem": 0.03692029531633602,
+      "min": 5.68,
+      "max": 6.2,
+      "cv_percent": 2.644945448041127
+    },
+    "ph": {
+      "n": 18,
+      "mean": 7.427777777777777,
+      "sd": 0.05693707109923623,
+      "sem": 0.013420196358390177,
+      "min": 7.31,
+      "max": 7.52,
+      "cv_percent": 0.7665424680525447
+    },
+    "tan": {
+      "n": 18,
+      "mean": 0.26333333333333336,
+      "sd": 0.02930569107548506,
+      "sem": 0.006907417628944525,
+      "min": 0.21,
+      "max": 0.33,
+      "cv_percent": 11.12874344638673
+    },
+    "nh3_mg_l": {
+      "n": 18,
+      "mean": 0.004557013676448443,
+      "sd": 0.0005841399381876009,
+      "sem": 0.00013768310381811444,
+      "min": 0.00373510332000451,
+      "max": 0.005789495637454799,
+      "cv_percent": 12.81848112957292
+    }
+  },
+  "water_quality_checks": {
+    "temperature_c": {
+      "species": "Nile tilapia (Oreochromis niloticus)",
+      "parameter": "temperature_c",
+      "measured_value": 27.08888888888889,
+      "unit": "degrees C",
+      "optimal_range": [
+        25.0,
+        27.0
+      ],
+      "within_cited_optimal_range": false,
+      "source": "FAO Cultured Aquatic Species Information Programme, Oreochromis niloticus (FAO, 2012) \u2014 survival limits; commonly cited optimal growth range from recent growth-performance studies.",
+      "caveat": "This range is a sanity-check flag from a limited literature search, not a verified universal threshold \u2014 confirm against current, strain/system-specific literature before citing it in a manuscript."
+    },
+    "dissolved_oxygen_mg_l": {
+      "species": "Nile tilapia (Oreochromis niloticus)",
+      "parameter": "dissolved_oxygen_mg_l",
+      "measured_value": 5.922222222222222,
+      "unit": "mg/L",
+      "optimal_range": [
+        5.0,
+        null
+      ],
+      "within_cited_optimal_range": true,
+      "source": "Nile tilapia is broadly oxygen-tolerant relative to other cultured species (FAO CASIP); one growth-performance study reports optimal DO 5.49-5.87 mg/L. Treat as approximate, not a strict cutoff.",
+      "caveat": "This range is a sanity-check flag from a limited literature search, not a verified universal threshold \u2014 confirm against current, strain/system-specific literature before citing it in a manuscript."
+    },
+    "ph": {
+      "species": "Nile tilapia (Oreochromis niloticus)",
+      "parameter": "ph",
+      "measured_value": 7.427777777777777,
+      "unit": "pH",
+      "optimal_range": [
+        6.0,
+        9.0
+      ],
+      "within_cited_optimal_range": true,
+      "source": "Commonly cited tolerant range across recent Nile tilapia water-quality studies (e.g. Fisheries and Aquatic Sciences 20:30, 2017).",
+      "caveat": "This range is a sanity-check flag from a limited literature search, not a verified universal threshold \u2014 confirm against current, strain/system-specific literature before citing it in a manuscript."
+    },
+    "total_ammonia_nitrogen_mg_l": {
+      "species": "Nile tilapia (Oreochromis niloticus)",
+      "parameter": "total_ammonia_nitrogen_mg_l",
+      "measured_value": 0.26333333333333336,
+      "unit": "mg/L TAN",
+      "optimal_range": [
+        0.0,
+        0.34
+      ],
+      "within_cited_optimal_range": true,
+      "source": "Reported optimal TAN range 0.29-0.34 mg/L in a Nile tilapia juvenile growth study; check unionized-fraction toxicity separately via calculate_unionized_ammonia, since TAN alone doesn't determine toxicity.",
+      "caveat": "This range is a sanity-check flag from a limited literature search, not a verified universal threshold \u2014 confirm against current, strain/system-specific literature before citing it in a manuscript."
+    }
+  },
+  "per_tank": [
+    {
+      "tank": 1,
+      "cp": 25,
+      "ff": 2,
+      "final_weight_g": 28.18,
+      "weight_gain_pct": 468.1451612903226,
+      "sgr": 3.1021549388101755,
+      "fcr": 1.447355727820844,
+      "per": 2.76366060057844,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.004744324317984858,
+      "temp": 27.0,
+      "do": 5.88,
+      "ph": 7.49,
+      "tan": 0.24,
+      "initial_weight_g": 4.96
+    },
+    {
+      "tank": 2,
+      "cp": 25,
+      "ff": 2,
+      "final_weight_g": 27.35,
+      "weight_gain_pct": 465.0826446280992,
+      "sgr": 3.0925032288204464,
+      "fcr": 1.4827898711683698,
+      "per": 2.697617563875174,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.004122977034885501,
+      "temp": 26.9,
+      "do": 5.89,
+      "ph": 7.49,
+      "tan": 0.21,
+      "initial_weight_g": 4.84
+    },
+    {
+      "tank": 3,
+      "cp": 25,
+      "ff": 2,
+      "final_weight_g": 26.29,
+      "weight_gain_pct": 430.0403225806451,
+      "sgr": 2.9781837464374177,
+      "fcr": 1.477884106756432,
+      "per": 2.7065721741733535,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.004833151069673007,
+      "temp": 27.0,
+      "do": 5.91,
+      "ph": 7.43,
+      "tan": 0.28,
+      "initial_weight_g": 4.96
+    },
+    {
+      "tank": 4,
+      "cp": 25,
+      "ff": 3,
+      "final_weight_g": 28.91,
+      "weight_gain_pct": 464.6484375,
+      "sgr": 3.0911305660300687,
+      "fcr": 1.3999469026548672,
+      "per": 2.857251223181663,
+      "survival_pct": 90.0,
+      "nh3_mg_l": 0.003951098052144898,
+      "temp": 27.3,
+      "do": 5.68,
+      "ph": 7.4,
+      "tan": 0.24,
+      "initial_weight_g": 5.12
+    },
+    {
+      "tank": 5,
+      "cp": 25,
+      "ff": 3,
+      "final_weight_g": 30.67,
+      "weight_gain_pct": 510.9561752988049,
+      "sgr": 3.2318840078973614,
+      "fcr": 1.4027194561087781,
+      "per": 2.8516037063435498,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.004394168300700606,
+      "temp": 27.2,
+      "do": 6.03,
+      "ph": 7.45,
+      "tan": 0.24,
+      "initial_weight_g": 5.02
+    },
+    {
+      "tank": 6,
+      "cp": 25,
+      "ff": 3,
+      "final_weight_g": 28.17,
+      "weight_gain_pct": 478.4394250513347,
+      "sgr": 3.1342207942746123,
+      "fcr": 1.40443516585479,
+      "per": 2.848120082186532,
+      "survival_pct": 85.0,
+      "nh3_mg_l": 0.005226552483975791,
+      "temp": 27.3,
+      "do": 6.12,
+      "ph": 7.44,
+      "tan": 0.29,
+      "initial_weight_g": 4.87
+    },
+    {
+      "tank": 7,
+      "cp": 30,
+      "ff": 2,
+      "final_weight_g": 33.27,
+      "weight_gain_pct": 580.3680981595094,
+      "sgr": 3.4240424759707233,
+      "fcr": 1.318893587033122,
+      "per": 2.5273709464550014,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.00373510332000451,
+      "temp": 26.7,
+      "do": 5.94,
+      "ph": 7.31,
+      "tan": 0.29,
+      "initial_weight_g": 4.89
+    },
+    {
+      "tank": 8,
+      "cp": 30,
+      "ff": 2,
+      "final_weight_g": 31.55,
+      "weight_gain_pct": 532.2645290581162,
+      "sgr": 3.2931029986139193,
+      "fcr": 1.2624247104247104,
+      "per": 2.640421488749154,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.005568740142021629,
+      "temp": 27.0,
+      "do": 6.2,
+      "ph": 7.42,
+      "tan": 0.33,
+      "initial_weight_g": 4.99
+    },
+    {
+      "tank": 9,
+      "cp": 30,
+      "ff": 2,
+      "final_weight_g": 31.68,
+      "weight_gain_pct": 534.8697394789579,
+      "sgr": 3.3004458163978527,
+      "fcr": 1.2710753091045335,
+      "per": 2.622451486121346,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.004262680567394051,
+      "temp": 27.3,
+      "do": 6.11,
+      "ph": 7.35,
+      "tan": 0.29,
+      "initial_weight_g": 4.99
+    },
+    {
+      "tank": 10,
+      "cp": 30,
+      "ff": 3,
+      "final_weight_g": 32.65,
+      "weight_gain_pct": 554.3086172344689,
+      "sgr": 3.354301689212523,
+      "fcr": 1.2450871338524288,
+      "per": 2.6771888028588444,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.005789495637454799,
+      "temp": 27.2,
+      "do": 5.72,
+      "ph": 7.52,
+      "tan": 0.27,
+      "initial_weight_g": 4.99
+    },
+    {
+      "tank": 11,
+      "cp": 30,
+      "ff": 3,
+      "final_weight_g": 35.23,
+      "weight_gain_pct": 610.282258064516,
+      "sgr": 3.5008790207434104,
+      "fcr": 1.2297059795176744,
+      "per": 2.71067506286402,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.004869155205421063,
+      "temp": 27.2,
+      "do": 6.09,
+      "ph": 7.46,
+      "tan": 0.26,
+      "initial_weight_g": 4.96
+    },
+    {
+      "tank": 12,
+      "cp": 30,
+      "ff": 3,
+      "final_weight_g": 34.36,
+      "weight_gain_pct": 579.0513833992096,
+      "sgr": 3.4205832389583586,
+      "fcr": 1.2003640819184318,
+      "per": 2.7769352511831014,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.0038314425331773924,
+      "temp": 26.8,
+      "do": 5.76,
+      "ph": 7.44,
+      "tan": 0.22,
+      "initial_weight_g": 5.06
+    },
+    {
+      "tank": 13,
+      "cp": 35,
+      "ff": 2,
+      "final_weight_g": 32.41,
+      "weight_gain_pct": 545.6175298804781,
+      "sgr": 3.3304233633032463,
+      "fcr": 1.2486471944657955,
+      "per": 2.2881906673127306,
+      "survival_pct": 90.0,
+      "nh3_mg_l": 0.004289268315810493,
+      "temp": 27.0,
+      "do": 5.81,
+      "ph": 7.41,
+      "tan": 0.26,
+      "initial_weight_g": 5.02
+    },
+    {
+      "tank": 14,
+      "cp": 35,
+      "ff": 2,
+      "final_weight_g": 35.03,
+      "weight_gain_pct": 604.8289738430584,
+      "sgr": 3.4871160662515317,
+      "fcr": 1.2581902860944778,
+      "per": 2.270835253395299,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.004354484493054913,
+      "temp": 27.0,
+      "do": 5.8,
+      "ph": 7.4,
+      "tan": 0.27,
+      "initial_weight_g": 4.97
+    },
+    {
+      "tank": 15,
+      "cp": 35,
+      "ff": 2,
+      "final_weight_g": 32.92,
+      "weight_gain_pct": 577.366255144033,
+      "sgr": 3.4161463176722617,
+      "fcr": 1.1673770491803281,
+      "per": 2.447489317310971,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.0043783795486571405,
+      "temp": 27.3,
+      "do": 5.96,
+      "ph": 7.41,
+      "tan": 0.26,
+      "initial_weight_g": 4.86
+    },
+    {
+      "tank": 16,
+      "cp": 35,
+      "ff": 3,
+      "final_weight_g": 34.67,
+      "weight_gain_pct": 600.4040404040404,
+      "sgr": 3.4758699698505944,
+      "fcr": 1.2283071613459882,
+      "per": 2.3260817383918684,
+      "survival_pct": 95.0,
+      "nh3_mg_l": 0.004289268315810493,
+      "temp": 27.0,
+      "do": 6.01,
+      "ph": 7.41,
+      "tan": 0.26,
+      "initial_weight_g": 4.95
+    },
+    {
+      "tank": 17,
+      "cp": 35,
+      "ff": 3,
+      "final_weight_g": 35.39,
+      "weight_gain_pct": 620.7739307535642,
+      "sgr": 3.527063129555255,
+      "fcr": 1.2652184424106374,
+      "per": 2.258221000714395,
+      "survival_pct": 90.0,
+      "nh3_mg_l": 0.004204542869949251,
+      "temp": 27.1,
+      "do": 6.0,
+      "ph": 7.35,
+      "tan": 0.29,
+      "initial_weight_g": 4.91
+    },
+    {
+      "tank": 18,
+      "cp": 35,
+      "ff": 3,
+      "final_weight_g": 35.63,
+      "weight_gain_pct": 611.177644710579,
+      "sgr": 3.5031286866445916,
+      "fcr": 1.1847028086218159,
+      "per": 2.411695858530645,
+      "survival_pct": 100.0,
+      "nh3_mg_l": 0.0051814139679515715,
+      "temp": 27.3,
+      "do": 5.69,
+      "ph": 7.52,
+      "tan": 0.24,
+      "initial_weight_g": 5.01
+    }
+  ]
+}

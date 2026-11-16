@@ -15,12 +15,15 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from aquaculture_manuscript_mcp import agents, integrity, journals, llm_client, pipeline
+from aquaculture_manuscript_mcp import agents, integrity, journals, llm_client, pipeline, research_agents
 from aquaculture_manuscript_mcp.tools import (
     bibtex_tools,
     calculators,
     citations,
     docx_export,
+    farm_data,
+    power as power_tool,
+    research_workspace,
     statistics as statistics_tool,
     water_quality,
 )
@@ -115,6 +118,26 @@ def orchestrator_agent(task_input: str, journal: str = "") -> str:
     return f"{agents.ORCHESTRATOR_AGENT_SYSTEM}{_journal_context(journal)}\n\nTask:\n{task_input}"
 
 
+# Aquaculture Research Intelligence System — Research Director + 11
+# specialists (see research_agents.py and docs/research-intelligence-system.md).
+
+
+def _make_research_prompt(agent_name: str):
+    def research_prompt(task_input: str, project_dir: str = "") -> str:
+        project = (
+            f"\n\nResearch project folder: {project_dir} (use get_project_status first)."
+            if project_dir
+            else "\n\nNo research project folder given. Offer to create one if this work will span several steps."
+        )
+        return f"{research_agents.get_research_prompt(agent_name)}{project}\n\nTask:\n{task_input}"
+
+    return research_prompt
+
+
+for _name, _spec in research_agents.RESEARCH_AGENTS.items():
+    mcp.prompt(name=_name, description=_spec["description"])(_make_research_prompt(_name))
+
+
 # ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
@@ -142,6 +165,17 @@ def journal_profiles() -> str:
     import json
 
     return json.dumps(journals.JOURNALS, indent=2)
+
+
+@mcp.resource("aquaculture://research-system")
+def research_system() -> str:
+    """Rules, approval gates and agent roster of the Aquaculture Research
+    Intelligence System."""
+    roster = "\n".join(
+        f"- {name} (phase {spec['phase']}): {spec['description']}"
+        for name, spec in research_agents.RESEARCH_AGENTS.items()
+    )
+    return f"{research_agents.RESEARCH_RULES}\nAgents:\n{roster}\n"
 
 
 # ---------------------------------------------------------------------------
@@ -507,6 +541,187 @@ def export_manuscript_docx(
     return docx_export.export_manuscript_docx(
         output_path, title, abstract, keywords, sections, authors, tables, references, ai_disclosure
     )
+
+
+# ---------------------------------------------------------------------------
+# Farm-data intelligence (Phase 1 of the research system). Reads the user's
+# own Excel/CSV records; column meanings come from a confirmed column_roles
+# mapping, never assumed.
+# ---------------------------------------------------------------------------
+
+
+def _maybe_save(project_dir: str, name: str, result: dict, inputs: dict) -> dict:
+    if project_dir:
+        result["saved"] = research_workspace.save_analysis(project_dir, name, result, inputs)
+    return result
+
+
+@mcp.tool()
+def suggest_column_roles(path: str, sheet: str | None = None) -> dict:
+    """Guess which spreadsheet column is the date, cage, species,
+    temperature, DO, salinity, feed, mortality, ABW, fish count, etc., from
+    column names. A starting point only: confirm every mapping and unit with
+    the user before passing it as column_roles to the analysis tools."""
+    return farm_data.suggest_column_roles(path, sheet)
+
+
+@mcp.tool()
+def profile_dataset(path: str, sheet: str | None = None) -> dict:
+    """Structure of a CSV/Excel dataset: rows, columns, types, missing
+    values, duplicates, numeric summaries, categorical levels, date ranges."""
+    return farm_data.profile_dataset(path, sheet)
+
+
+@mcp.tool()
+def check_data_quality(
+    path: str, column_roles: dict[str, str], sheet: str | None = None, project_dir: str = ""
+) -> dict:
+    """Quality report for farm records: missing values, duplicate and
+    conflicting cage-day rows, physically implausible values, extreme
+    outliers, date gaps, ABW drops between samplings, fish counts rising
+    without restocking. column_roles maps canonical roles (date, cage,
+    species, temperature_c, salinity_ppt, do_mg_l, ph, feed_kg,
+    mortality_count, abw_g, fish_count, stocking_density_kg_m3, biomass_kg,
+    cost, batch) to the file's column names. Pass project_dir to save the
+    report into the research project."""
+    result = farm_data.check_data_quality(path, column_roles, sheet)
+    return _maybe_save(project_dir, "data_quality", result, {"path": path, "column_roles": column_roles})
+
+
+@mcp.tool()
+def compute_performance_metrics(
+    path: str, column_roles: dict[str, str], sheet: str | None = None, project_dir: str = ""
+) -> dict:
+    """Per-cage and per-sampling-interval SGR, biomass-corrected FCR and
+    survival from raw farm records, with the cleaning steps applied listed
+    in cleaning_log. Pass project_dir to save the output."""
+    result = farm_data.compute_performance_metrics(path, column_roles, sheet)
+    return _maybe_save(project_dir, "performance_metrics", result, {"path": path, "column_roles": column_roles})
+
+
+@mcp.tool()
+def discover_research_opportunities(
+    path: str,
+    column_roles: dict[str, str],
+    sheet: str | None = None,
+    high_temperature_threshold_c: float | None = None,
+    max_lag_days: int = 7,
+    project_dir: str = "",
+) -> dict:
+    """Scan validated farm records for candidate research questions: thermal
+    stress and mortality (with time lags), species survival, temperature vs
+    growth and FCR, seasonal variation, temperature x DO/salinity
+    interaction, stocking density vs growth. Each candidate carries its
+    computed evidence, data sufficiency, likely confounders and next step.
+    All are observational associations, not findings. Supply
+    high_temperature_threshold_c from the user or literature if available."""
+    result = farm_data.discover_research_opportunities(
+        path, column_roles, sheet, high_temperature_threshold_c, max_lag_days
+    )
+    return _maybe_save(
+        project_dir,
+        "research_opportunities",
+        result,
+        {"path": path, "column_roles": column_roles, "high_temperature_threshold_c": high_temperature_threshold_c, "max_lag_days": max_lag_days},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Sample size and power — effect size must come with its source.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def calculate_sample_size(
+    test: str,
+    effect_size: float,
+    effect_size_source: str,
+    alpha: float = 0.05,
+    power: float = 0.8,
+    k_groups: int = 2,
+) -> dict:
+    """Experimental units (cages/tanks) needed per group. test:
+    "two_sample_t" (effect_size = Cohen's d) or "one_way_anova" (Cohen's f).
+    effect_size_source is required: pilot data, farm records or a cited study."""
+    return power_tool.calculate_sample_size(test, effect_size, effect_size_source, alpha, power, k_groups)
+
+
+@mcp.tool()
+def calculate_achieved_power(
+    test: str,
+    effect_size: float,
+    effect_size_source: str,
+    units_per_group: int,
+    alpha: float = 0.05,
+    k_groups: int = 2,
+) -> dict:
+    """Statistical power of a design with a given number of units per group."""
+    return power_tool.calculate_achieved_power(test, effect_size, effect_size_source, units_per_group, alpha, k_groups)
+
+
+# ---------------------------------------------------------------------------
+# Research project workspace — memory, data repository, reference library,
+# approval gates and audit trail as plain files in one project folder.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def create_research_project(project_dir: str, name: str, description: str, workflow: str) -> dict:
+    """Create a research project folder (data/raw, data/processed, analysis,
+    references, documents, decisions, audit trail). workflow:
+    "A_question_first" or "B_data_first"."""
+    return research_workspace.create_research_project(project_dir, name, description, workflow)
+
+
+@mcp.tool()
+def register_dataset(project_dir: str, source_path: str, description: str) -> dict:
+    """Copy an original dataset into the project's data/raw unchanged and
+    record its SHA-256 checksum."""
+    return research_workspace.register_dataset(project_dir, source_path, description)
+
+
+@mcp.tool()
+def save_analysis(project_dir: str, name: str, result: dict, inputs: dict | None = None) -> dict:
+    """Save an analysis result (with its inputs) into the project's analysis folder."""
+    return research_workspace.save_analysis(project_dir, name, result, inputs)
+
+
+@mcp.tool()
+def add_verified_reference(project_dir: str, doi: str, relevance_note: str) -> dict:
+    """Resolve a DOI in CrossRef and add it to the project's reference
+    library. Unresolvable DOIs are refused."""
+    return research_workspace.add_verified_reference(project_dir, doi, relevance_note)
+
+
+@mcp.tool()
+def list_references(project_dir: str) -> list[dict]:
+    """The project's verified reference library."""
+    return research_workspace.list_references(project_dir)
+
+
+@mcp.tool()
+def record_gate_decision(
+    project_dir: str, gate: str, status: str, summary: str, rationale: str, user_confirmation: str = ""
+) -> dict:
+    """Record a decision at approval gate G1_research_question,
+    G2_study_design, G3_proposal or G4_publication. Agents may record
+    status "proposed". "approved"/"rejected" only after the user explicitly
+    decided in the conversation, quoted in user_confirmation."""
+    return research_workspace.record_gate_decision(project_dir, gate, status, summary, rationale, user_confirmation)
+
+
+@mcp.tool()
+def log_claim(project_dir: str, claim: str, source_type: str, source_ref: str) -> dict:
+    """Add a claim and its origin to the project's audit trail. source_type:
+    dataset, analysis, reference, calculation or user_statement."""
+    return research_workspace.log_claim(project_dir, claim, source_type, source_ref)
+
+
+@mcp.tool()
+def get_project_status(project_dir: str) -> dict:
+    """Datasets, analyses, references, documents, gate status and audit-trail
+    size for a research project."""
+    return research_workspace.get_project_status(project_dir)
 
 
 def main() -> None:

@@ -107,9 +107,9 @@ or, for a virtualenv install on Windows:
 }
 ```
 
-Restart Claude Desktop. The six agents now appear as prompts you can attach to a
-conversation (paperclip / prompts menu), and the two tools (citation-integrity
-check, AI-disclosure drafting) are available for Claude to call directly.
+Restart Claude Desktop. The manuscript and research agents now appear as
+prompts you can attach to a conversation (paperclip / prompts menu), and the
+tools are available for Claude to call directly.
 
 When run this way, **the prompts use Claude itself** to draft — no API key needed.
 
@@ -189,6 +189,67 @@ Two ways to use this:
    external model via `AQUA_API_KEY`: draft -> check -> revise (only if a real
    overlap was found) -> re-check -> copyedit, capped at `max_revisions` and
    returning a full step-by-step log so nothing happens silently.
+
+## Aquaculture Research Intelligence System (12 research agents)
+
+A second team of agents works *upstream* of the manuscript agents: it takes a
+farm's own records (or a research idea) through to a research proposal. One
+`research-director` prompt routes work to eleven specialists and stops for
+your approval at four gates (G1 research question, G2 study design, G3
+proposal, G4 publication). Full design: [docs/research-intelligence-system.md](docs/research-intelligence-system.md).
+
+| Phase | Agent prompts | What backs them |
+|---|---|---|
+| 0 | `research-director` | project workspace + every agent |
+| 1 — research intelligence | `data-intelligence-agent`, `opportunity-discovery-agent`, `literature-review-agent` | farm-data tools, CrossRef, reference library (built and tested) |
+| 2 — research design | `question-hypothesis-agent`, `statistical-analysis-agent`, `experimental-design-agent`, `methodology-agent` | statistics + sample-size/power tools |
+| 3 — proposal | `feasibility-agent`, `proposal-writing-agent`, `ethics-validation-agent` | calculators, docx export, integrity check |
+| 4 — publication | `publication-agent` | the six manuscript agents above |
+
+Two starting points: **Workflow A** (question first, e.g. heat stress in
+Sobaity, Shaam and Gabit) and **Workflow B** (data first: upload years of
+growth, feeding, mortality and water-quality records). Farm data are treated
+as observational: the system reports candidate associations with data
+sufficiency and confounders, and recommends a controlled study when a
+question is causal.
+
+Worked run on synthetic cage-farm records: [examples/cage_farm_phase1](examples/cage_farm_phase1/README.md).
+
+### Farm-data tools (Phase 1)
+
+Every analysis tool takes a `column_roles` mapping from canonical roles
+(`date`, `cage`, `species`, `temperature_c`, `salinity_ppt`, `do_mg_l`, `ph`,
+`feed_kg`, `mortality_count`, `abw_g`, `fish_count`,
+`stocking_density_kg_m3`, `biomass_kg`, `cost`, `batch`) to your file's own
+column names, so any spreadsheet layout works. Excel and CSV are supported.
+
+- `suggest_column_roles(path)` — guesses the mapping from column names; confirm it before use.
+- `profile_dataset(path)` — rows, types, missing values, duplicates, date ranges.
+- `check_data_quality(path, column_roles)` — implausible values, conflicting
+  cage-day rows, gaps, ABW drops, likely kg-for-g entries, restocking events.
+- `compute_performance_metrics(path, column_roles)` — SGR, biomass-corrected
+  FCR and survival per sampling interval and per production cycle. A rise in
+  fish count starts a new cycle, so nothing is computed across a restock.
+- `discover_research_opportunities(path, column_roles, high_temperature_threshold_c=None)`
+  — thermal stress vs mortality (with lags), species survival, temperature
+  vs SGR and FCR, seasonal variation, temperature × DO/salinity, density vs
+  growth, each with evidence, data sufficiency and confounders.
+
+The analysis tools accept `project_dir` to save their output into a research project.
+
+### Research project workspace
+
+`create_research_project`, `register_dataset` (raw data copied unchanged with
+SHA-256), `save_analysis`, `add_verified_reference` (CrossRef-resolved only),
+`list_references`, `record_gate_decision` (approval needs the user's quoted
+decision), `log_claim` (audit trail; needs a source), `get_project_status`.
+
+### Sample size and power
+
+`calculate_sample_size` and `calculate_achieved_power` (two-sample t-test,
+one-way ANOVA), counted in cages/tanks. Both require `effect_size_source`, so
+every sample size in a proposal traces to pilot data, farm records or a
+cited study.
 
 ## Tools reference
 
