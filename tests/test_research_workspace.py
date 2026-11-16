@@ -1,6 +1,7 @@
 import hashlib
 import json
 
+import pandas as pd
 import pytest
 
 from aquaculture_manuscript_mcp import research_agents
@@ -68,6 +69,42 @@ def test_reference_library_stores_only_resolved_dois(project, monkeypatch):
     with pytest.raises(ValueError):
         ws.add_verified_reference(project, "10.9/none", "x")
     assert len(ws.list_references(project)) == 1
+
+
+def test_import_pasted_table(project):
+    r = ws.import_pasted_table(project, "Date,Cage,Temp\n2024-01-01,C1,25.1\n", "pasted.csv", "pasted by user")
+    assert r["source_path"] == "pasted in conversation"
+    with pytest.raises(ValueError, match="already registered"):
+        ws.import_pasted_table(project, "a,b\n1,2\n", "pasted.csv", "again")
+    with pytest.raises(ValueError, match="header row"):
+        ws.import_pasted_table(project, "a,b", "x.csv", "no rows")
+
+
+def test_corrections_use_quality_report_row_numbers_and_keep_raw(project, farm_csv, column_roles):
+    from aquaculture_manuscript_mcp.tools import farm_data
+
+    ws.register_dataset(project, farm_csv, "records")
+    q = farm_data.check_data_quality(farm_csv, column_roles)
+    bad = next(i for i in q["issues"] if i["check"] == "implausible_value")["examples"][0]
+    dup = next(i for i in q["issues"] if i["check"] == "exact_duplicate_rows")["examples"][0]
+    with pytest.raises(ValueError, match="user_confirmation"):
+        ws.apply_data_corrections(project, "farm.csv", [], " ")
+    r = ws.apply_data_corrections(
+        project, "farm.csv",
+        [{"row": bad["row"], "column": "Temp (C)", "new_value": None, "reason": "sensor error"},
+         {"row": dup["row"], "action": "drop", "reason": "double entry"}],
+        "User: 'blank the 99 and drop the duplicate'",
+    )
+    assert r["rows_out"] == r["rows_in"] - 1
+    assert r["applied"][0]["old_value"] == 99.0
+    q2 = farm_data.check_data_quality(r["corrected_file"], column_roles)
+    checks = {i["check"] for i in q2["issues"]}
+    assert "implausible_value" not in checks and "exact_duplicate_rows" not in checks
+    raw = pd.read_csv(f"{project}/data/raw/farm.csv")
+    assert (raw["Temp (C)"] == 99.0).any()  # raw untouched
+    assert ws.get_project_status(project)["audit_entries"] == 1
+    with pytest.raises(ValueError, match="outside the data"):
+        ws.apply_data_corrections(project, "farm.csv", [{"row": 999999, "action": "drop", "reason": "x"}], "ok")
 
 
 def test_all_twelve_research_agents_share_the_rules_and_output_block():

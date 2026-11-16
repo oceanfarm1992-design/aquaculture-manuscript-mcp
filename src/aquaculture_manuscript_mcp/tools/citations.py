@@ -8,12 +8,27 @@ here should be treated as unverified, not cited as fact.
 
 from __future__ import annotations
 
+import html
+import re
+
 import httpx
 
 CROSSREF_BASE = "https://api.crossref.org"
 # CrossRef asks polite-pool users to identify themselves via User-Agent.
 _HEADERS = {"User-Agent": "aquaculture-manuscript-mcp/0.1 (https://github.com/oceanfarm1992-design/aquaculture-manuscript-mcp)"}
 _TIMEOUT = 20.0
+
+
+def clean_title(title: str | None) -> str | None:
+    """Strip the inline HTML/JATS markup CrossRef sometimes returns in titles
+    (e.g. "bream,<i>Acanthopagrus latus,</i>at") and fix the spacing it leaves."""
+    if not title:
+        return title
+    t = re.sub(r"\s*<[^>]+>\s*", " ", title)
+    t = html.unescape(t)
+    t = re.sub(r"\s+([,.;:)\]])", r"\1", t)
+    t = re.sub(r"([(\[])\s+", r"\1", t)
+    return re.sub(r"\s{2,}", " ", t).strip()
 
 
 def resolve_doi_metadata(doi: str) -> dict:
@@ -34,7 +49,7 @@ def resolve_doi_metadata(doi: str) -> dict:
     ]
     return {
         "doi": message.get("DOI"),
-        "title": (message.get("title") or [None])[0],
+        "title": clean_title((message.get("title") or [None])[0]),
         "authors": authors,
         "container_title": (message.get("container-title") or [None])[0],
         "year": _extract_year(message),
@@ -73,7 +88,7 @@ def search_works(query: str, rows: int = 5) -> list[dict]:
         results.append(
             {
                 "doi": message.get("DOI"),
-                "title": (message.get("title") or [None])[0],
+                "title": clean_title((message.get("title") or [None])[0]),
                 "authors": authors,
                 "container_title": (message.get("container-title") or [None])[0],
                 "year": _extract_year(message),

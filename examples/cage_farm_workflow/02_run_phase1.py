@@ -53,6 +53,7 @@ def main() -> None:
     profile = farm_data.profile_dataset(str(DATA))
     roles = farm_data.suggest_column_roles(str(DATA))
     assert roles["suggested_column_roles"] == CONFIRMED_ROLES, roles["suggested_column_roles"]
+    (HERE / "column_roles.json").write_text(json.dumps(CONFIRMED_ROLES, indent=2, ensure_ascii=False), encoding="utf-8")
 
     quality = farm_data.check_data_quality(str(DATA), CONFIRMED_ROLES)
     metrics = farm_data.compute_performance_metrics(str(DATA), CONFIRMED_ROLES)

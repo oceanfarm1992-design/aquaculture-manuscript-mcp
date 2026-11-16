@@ -1,0 +1,12 @@
+{
+  "date": "Date",
+  "cage": "Cage No",
+  "species": "Species",
+  "temperature_c": "Water Temp (°C)",
+  "salinity_ppt": "Salinity (ppt)",
+  "do_mg_l": "DO (mg/L)",
+  "feed_kg": "Feed Given (kg)",
+  "mortality_count": "Mortality (pcs)",
+  "abw_g": "ABW (g)",
+  "fish_count": "Fish Count"
+}

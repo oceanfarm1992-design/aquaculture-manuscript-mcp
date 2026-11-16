@@ -14,7 +14,7 @@ async def test_prompts_tools_resources_all_register():
     tools = await mcp.list_tools()
     resources = await mcp.list_resources()
     assert len(prompts) == 7 + 12
-    assert len(tools) == 30 + 15
+    assert len(tools) == 30 + 15 + 12
     assert len(resources) == 4
 
 
@@ -42,6 +42,30 @@ async def test_farm_data_tools_round_trip(tool_name, farm_csv, column_roles, tmp
         args.update({"column_roles": column_roles, "project_dir": str(proj)})
     result = await mcp.call_tool(tool_name, args)
     assert result is not None
+
+
+@pytest.mark.asyncio
+async def test_phase2_tools_round_trip(farm_csv, column_roles, tmp_path):
+    """Models and exports go through real MCP serialization."""
+    daily = str(tmp_path / "daily.csv")
+    interval = str(tmp_path / "interval.csv")
+    await mcp.call_tool("export_analysis_table", {"path": farm_csv, "column_roles": column_roles, "output_path": daily, "level": "daily"})
+    await mcp.call_tool("export_analysis_table", {"path": farm_csv, "column_roles": column_roles, "output_path": interval, "level": "interval"})
+    calls = [
+        ("fit_gee_model", {"table_path": daily, "response": "mortality_count", "fixed_effects": ["temperature_c", "species"],
+                           "group": "cage", "family": "poisson", "time": "day_index", "offset": "log_fish_count"}),
+        ("fit_mixed_model", {"table_path": interval, "response": "sgr", "fixed_effects": ["mean_temperature_c", "abw_start_g"], "group": "cage"}),
+        ("estimate_effect_size_from_records", {"table_path": interval, "response": "sgr", "unit_column": "cage",
+                                               "minimum_important_difference": 0.1, "difference_rationale": "test"}),
+        ("make_figure", {"table_path": interval, "kind": "scatter", "x": "mean_temperature_c", "y": "sgr",
+                         "output_path": str(tmp_path / "f.png"), "group": "species"}),
+        ("plan_trial_resources", {"treatments": 2, "units_per_treatment": 3, "fish_per_unit": 50, "initial_weight_g": 10,
+                                  "expected_final_weight_g": 40, "duration_days": 60, "expected_fcr": 1.4,
+                                  "expected_fcr_source": "records", "expected_survival_pct": 95, "expected_survival_source": "records"}),
+        ("export_research_proposal", {"output_path": str(tmp_path / "p.docx"), "title": "t", "sections": {"abstract": "a"}}),
+    ]
+    for name, args in calls:
+        assert await mcp.call_tool(name, args) is not None, name
 
 
 @pytest.mark.asyncio

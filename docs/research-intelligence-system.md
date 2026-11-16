@@ -63,22 +63,23 @@ Every specialist ends with the same block, which is what the Director reviews:
 
 | # | Prompt name | Phase | Responsible for | Backed by tools | Status |
 |---|---|---|---|---|---|
-| 01 | `research-director` | 0 | Workflow choice, routing, review, gates, final package | workspace tools + all agents | Built |
-| 02 | `data-intelligence-agent` | 1 | Profiling, column-role confirmation, quality checks, SGR/FCR/survival | `profile_dataset`, `suggest_column_roles`, `check_data_quality`, `compute_performance_metrics` | Built + tested |
-| 03 | `opportunity-discovery-agent` | 1 | Candidate research topics from validated data | `discover_research_opportunities` | Built + tested |
+| 01 | `research-director` | 0 | Workflow choice, routing, review, gates, final package | workspace tools, `import_pasted_table` + all agents | Built |
+| 02 | `data-intelligence-agent` | 1 | Profiling, column-role confirmation, quality checks, approved corrections, SGR/FCR/survival, analysis tables | `profile_dataset`, `suggest_column_roles`, `check_data_quality`, `apply_data_corrections`, `compute_performance_metrics`, `export_analysis_table` | Built + tested |
+| 03 | `opportunity-discovery-agent` | 1 | Candidate research topics from validated data | `discover_research_opportunities`, `make_figure` | Built + tested |
 | 04 | `literature-review-agent` | 1 | Evidence, conflicts, gaps; verified reference library | `search_citations`, `resolve_doi_metadata`, `add_verified_reference` | Built + tested |
-| 05 | `question-hypothesis-agent` | 2 | Questions, objectives, hypotheses, conceptual framework → G1 | workspace tools | Prompt |
-| 06 | `statistical-analysis-agent` | 2 | Method choice, power and sample size, analysis plan | statistics tools, `calculate_sample_size`, `calculate_achieved_power` | Prompt + power tools tested |
-| 07 | `experimental-design-agent` | 2 | Treatments, units, replication, randomisation, sampling → Research Design Document, G2 | power, calculators | Prompt |
-| 08 | `methodology-agent` | 2 | Field/lab protocols, data-collection templates, QC | water-quality tools | Prompt |
-| 09 | `feasibility-agent` | 3 | Fish, cages, feed, staff, equipment, budget, risks | calculators, performance metrics | Prompt |
-| 10 | `proposal-writing-agent` | 3 | 22-section proposal after G2 | reference library, docx export | Prompt |
-| 11 | `ethics-validation-agent` | 3 | Welfare, permits, biosecurity, validity, unsupported claims, before G3/G4 | `check_citation_integrity`, audit trail | Prompt |
-| 12 | `publication-agent` | 4 | Manuscripts and reports via the six existing manuscript agents → G4 | manuscript agents, docx export | Prompt |
+| 05 | `question-hypothesis-agent` | 2 | Questions, objectives, hypotheses, conceptual framework → G1 | workspace tools | Prompt (reasoning task) |
+| 06 | `statistical-analysis-agent` | 2 | Models for repeated cage data, effect size, power, analysis plan | `fit_gee_model`, `fit_mixed_model`, `estimate_effect_size_from_records`, `calculate_sample_size`, `export_analysis_plan_xlsx` + statistics tools | Built + tested |
+| 07 | `experimental-design-agent` | 2 | Treatments, units, replication, randomisation, sampling → Research Design Document, G2 | `export_research_design_document`, power tools | Built + tested |
+| 08 | `methodology-agent` | 2 | Field/lab protocols, data-collection templates, QC | water-quality tools | Prompt (reasoning task) |
+| 09 | `feasibility-agent` | 3 | Fish, cages, feed, density, costs, risks | `plan_trial_resources`, performance metrics | Built + tested |
+| 10 | `proposal-writing-agent` | 3 | 22-part proposal after G2, Gantt chart, budget | `export_research_proposal`, reference library | Built + tested |
+| 11 | `ethics-validation-agent` | 3 | Welfare, permits, biosecurity, validity, unsupported claims, before G3/G4 | `check_citation_integrity`, audit trail | Prompt (reasoning task) |
+| 12 | `publication-agent` | 4 | Manuscripts, figures, slides via the six manuscript agents → G4 | manuscript agents, `make_figure`, `export_presentation_pptx`, docx export | Built + tested |
 
-"Prompt" means the agent's instructions, rules and output format exist and are
-registered, and it can use every existing tool listed, but it has no
-dedicated new tool of its own yet.
+"Prompt (reasoning task)" means the work is judgement and writing (choosing
+hypotheses, drafting protocols, reviewing ethics), done by the model under the
+agent's instructions and checked against the audit trail; there is no
+calculation for a dedicated tool to do.
 
 ## 4. Workflows and approval gates
 
@@ -138,9 +139,28 @@ under `skipped_candidates` with the columns it needs.
 | Reference library | `references/library.json`, CrossRef-verified entries only (`add_verified_reference`) |
 | Data repository | `data/raw` (originals copied unchanged, SHA-256 in `manifest.json`) and `data/processed`, kept apart |
 | Scientific audit | `audit.jsonl` via `log_claim`; a claim cannot be logged without a source reference |
-| Document generator | `.docx` via `export_manuscript_docx`. Excel analysis plans, PDF reports and presentations not built yet |
+| Document generator | Research Design Document and proposal (`.docx`, Gantt and budget), manuscript (`.docx`), analysis plan (`.xlsx`), figures (300-dpi PNG), slides (`.pptx`). PDF: save the Word file as PDF |
+| Data corrections | `apply_data_corrections`: by spreadsheet row number, with a reason per change and the user's quoted approval; writes a corrected copy to `data/processed` and a correction log, never edits the raw file |
+| Pasted data | `import_pasted_table`: CSV text pasted into chat becomes a registered raw dataset (for clients where attachments have no file path) |
 
 One project folder per study, plain files, so it can live in git.
+
+## 6a. Models for repeated cage data
+
+Daily or monthly rows from the same cage are not independent, so Phase 2 uses:
+
+- `fit_gee_model`: generalized estimating equations, robust SEs (bias-reduced
+  below 40 cages), working correlation AR(1) over `day_index`, exchangeable or
+  independence. For daily deaths: Poisson family with offset `log_fish_count`;
+  coefficients come with rate ratios. Pearson dispersion is reported.
+- `fit_mixed_model`: linear mixed model, random intercept per cage, for
+  interval SGR/FCR or cycle outcomes; reports the ICC and convergence.
+- `estimate_effect_size_from_records`: d = minimum important difference /
+  between-cage SD, so a trial's sample size comes from the farm's own variation.
+
+Both model tools copy column names to internal names before building the
+formula, and attach caveats (few cages, overdispersion, non-convergence) to
+their output.
 
 ## 7. Integrity rules (every agent)
 
@@ -161,13 +181,21 @@ quoted user decision; Tukey letters are never auto-assigned.
 
 ## 8. Roadmap
 
-| Phase | Agents | Status | Next work |
-|---|---|---|---|
-| 1 Research intelligence | Data Intelligence, Opportunity Discovery, Literature Review | Built and tested | Run on real farm records; tune plausibility ranges per site |
-| 2 Research design | Question/Hypothesis, Statistics, Experimental Design, Methodology | Prompts + power tools | Mixed-effects models (cage random effect) and autocorrelation-aware time-series tools; Research Design Document template |
-| 3 Proposal | Feasibility, Proposal Writing, Ethics & Validation | Prompts | Proposal `.docx` template (22 sections, Gantt chart, budget table); resource calculator |
-| 4 Publication | Publication + Director enhancements | Prompt, reuses 6 manuscript agents | Figure generation; PDF/presentation export |
+| Phase | Agents | Status |
+|---|---|---|
+| 1 Research intelligence | Data Intelligence, Opportunity Discovery, Literature Review | Built and tested |
+| 2 Research design | Question/Hypothesis, Statistics, Experimental Design, Methodology | Built and tested (GEE, mixed models, effect size, power, design document, analysis plan) |
+| 3 Proposal | Feasibility, Proposal Writing, Ethics & Validation | Built and tested (resource planner, 22-part proposal with Gantt and budget) |
+| 4 Publication | Publication + Director | Built and tested (figures, slides, manuscript agents) |
 
-Not in scope for this server: a vector database over papers, PostgreSQL/Supabase
-storage and R integration. The plain-file project folder covers the Phase 1–2
-needs; move to a database when several users need to share projects at once.
+The whole workflow runs end to end on synthetic records in
+[examples/cage_farm_workflow](../examples/cage_farm_workflow/README.md).
+
+Remaining work, in order of value:
+1. Run on real farm records; tune plausibility ranges and column-name heuristics per site.
+2. Time-to-event (survival) models and negative-binomial count models, if the
+   real data show strong overdispersion.
+3. Shared storage (PostgreSQL/Supabase) and a vector index over papers, once
+   several people work on the same projects. The plain-file project folder
+   covers single-user work.
+4. R integration for analyses with no Python equivalent.

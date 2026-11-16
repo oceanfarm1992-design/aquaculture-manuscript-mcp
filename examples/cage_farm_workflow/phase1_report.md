@@ -14,7 +14,7 @@ Issues: 4 errors, 1 warnings, 11 info.
 | error | implausible_value | temperature_c outside physically plausible range -2.0–40.0 | 1 |
 | error | implausible_value | feed_kg outside physically plausible range 0.0–None | 1 |
 | error | abw_possible_unit_error | cage H2: ABW fell >90% between samplings within one production cycle (kg entered instead of g?) | 1 |
-| warning | exact_duplicate_rows | identical rows (likely double entry) | 3 |
+| warning | exact_duplicate_rows | identical rows (likely double entry); the later copy is listed | 3 |
 | info | date_gaps | cage G3: 10 day(s) without a record inside its date span | 10 |
 
 Cleaning applied for analysis (reported, not hidden): `{"exact_duplicate_rows_dropped": 3, "implausible_values_set_to_missing": {"temperature_c": 1, "feed_kg": 1}, "rows_dropped_unparseable_date": 0, "duplicate_cage_date_rows_dropped_keep_first": 1, "production_cycles_per_cage": {"G1": 4, "G2": 4, "G3": 4, "H1": 4, "H2": 4, "H3": 4, "S1": 4, "S2": 4, "S3": 4}}`
@@ -138,7 +138,7 @@ CrossRef search hits only. None has been read or added to the reference library 
 - Munro (1948). Sparidentex hasta (Valenciennes), a New Name for Chrysophrys cuvieri Day. *Copeia*. doi:10.2307/1438716
 - Monjezi Veisi, Waiho (2024). Neurophysiological responses of juvenile Sobaity seabream, Sparidentex hasta, exposed to different concentrations of selenium. *None*. doi:10.3897/arphapreprints.e120385
 - Agh, Morshedi (2022). The effects of single and combined use of Lactobacillus plantarum and xylooligosacharide on growth, feed utilization, immune responses, and immune and growth related genes of sobaity (Sparidentex hasta) fingerlings. *Aquaculture Reports*. doi:10.1016/j.aqrep.2022.101271
-- Taravat, Preeta (2019). Effect of Short Term Food Deprivation and Re-Feeding on Growth, Feeding and Biochemical Body Composition in Sobaity Fish, <i>Sparidentex hasta</i>. *Veterinary Research*. doi:10.36478/vr.2019.10.18
+- Taravat, Preeta (2019). Effect of Short Term Food Deprivation and Re-Feeding on Growth, Feeding and Biochemical Body Composition in Sobaity Fish, Sparidentex hasta. *Veterinary Research*. doi:10.36478/vr.2019.10.18
 
 **sobaity seabream culture Arabian Gulf**
 - Young, Shaikhi (2023). Sobaity Seabream Culture in High-Temperature Conditions. *North American Journal of Aquaculture*. doi:10.1002/naaq.10287
@@ -148,7 +148,7 @@ CrossRef search hits only. None has been read or added to the reference library 
 - Mohamed, Al-Hassani (2021). Population dynamics of Arabian yellowfin seabream, Acanthopagrus arabicus Iwatsuki, 2013 from Iraqi marine waters, Arabian Gulf. *International Journal of Fisheries and Aquatic Studies*. doi:10.22271/fish.2021.v9.i4a.2517
 
 **cage aquaculture high temperature mortality sea bream**
-- Jian, Cheng (2003). Temperature and salinity tolerances of yellowfin sea bream,<i>Acanthopagrus latus,</i>at different salinity and temperature levels. *Aquaculture Research*. doi:10.1046/j.1365-2109.2003.00800.x
+- Jian, Cheng (2003). Temperature and salinity tolerances of yellowfin sea bream, Acanthopagrus latus, at different salinity and temperature levels. *Aquaculture Research*. doi:10.1046/j.1365-2109.2003.00800.x
 - Sumithra, Krupesha Sharma (2022). Red sea bream iridovirus infection in cage farmed Asian sea bass (Lates calcarifer): Insights into the pathology, epizootiology, and genetic diversity. *Aquaculture*. doi:10.1016/j.aquaculture.2021.737571
 - Woo (1990). Metabolic and osmoregulatory changes during temperature acclimation in the red sea bream, Chrysophrys major: Implications for its culture in the subtropics. *Aquaculture*. doi:10.1016/0044-8486(90)90275-r
 - Mladineo, Šegvić (2009). Molecular evidence for the lack of transmission of the monogenean Sparicotyle chrysophrii (Monogenea, Polyopisthocotylea) and isopod Ceratothoa oestroides (Crustacea, Cymothoidae) between wild bogue (Boops boops) and cage-reared sea bream (Sparus aurata) and sea bass (Dicentrarchus labrax). *Aquaculture*. doi:10.1016/j.aquaculture.2009.07.017

@@ -101,7 +101,10 @@ How to run it:
 1. Identify the workflow and confirm the inputs actually provided. For data,
    confirm column meanings and units with the user (suggest_column_roles) before
    any analysis. If a research project folder is not set up, offer to create one
-   (create_research_project) and register the raw data (register_dataset).
+   (create_research_project) and register the raw data (register_dataset with a
+   file path, or import_pasted_table when the user pasted the table into chat).
+   The tools read files on the computer running this server: if the user only
+   attached a file in chat, ask for its path or paste the table as CSV.
 2. Call one specialist at a time with a specific task. Specialists never talk to
    each other directly; route every handoff through yourself.
 3. Review each "Agent output" block before moving on: are claims sourced, are
@@ -133,9 +136,16 @@ Steps:
    cage-day rows, gaps, ABW drops, fish-count increases, outliers.
 4. compute_performance_metrics: per-cage and per-interval SGR, FCR and survival.
 5. Report what the data can support (which variables, how many cages per species,
-   how many years, sampling frequency) and what they cannot. Do not delete or
-   "fix" values silently: list proposed corrections for the user to approve.""",
-    "profile_dataset, suggest_column_roles, check_data_quality, compute_performance_metrics, save_analysis.",
+   how many years, sampling frequency, production cycles) and what they cannot.
+6. Corrections: list each proposed fix by spreadsheet row number (the "row" in
+   check_data_quality examples) with the reason. After the user approves the
+   list, apply it with apply_data_corrections (quote their approval). The raw
+   file is never changed; later analysis uses the corrected copy in
+   data/processed. Never correct values silently.
+7. Produce analysis-ready tables with export_analysis_table (daily / interval /
+   cycle) into the project's data/processed folder for the other agents.""",
+    "profile_dataset, suggest_column_roles, check_data_quality, apply_data_corrections, "
+    "compute_performance_metrics, export_analysis_table, import_pasted_table, save_analysis.",
 )
 
 OPPORTUNITY_DISCOVERY = _agent(
@@ -154,7 +164,7 @@ Steps:
 4. Present them as research candidates, not conclusions. Flag post-hoc choices
    (e.g. "strongest lag") as hypotheses to confirm, not results.""",
     "discover_research_opportunities, compute_performance_metrics, descriptive_stats, "
-    "calculate_pearson_correlation, save_analysis.",
+    "calculate_pearson_correlation, make_figure (to show a pattern to the user), save_analysis.",
 )
 
 LITERATURE_REVIEW = _agent(
@@ -202,21 +212,30 @@ Responsibilities:
   designed trials; correlation, regression, mixed models (cage as random
   effect) and time-series approaches for repeated farm records. State the
   experimental unit and how autocorrelation and pseudo-replication are handled.
-- Sample size and power: use calculate_sample_size / calculate_achieved_power
-  with an effect size whose source is stated (pilot data, farm records, or a
-  verified reference). Never pick an effect size because it gives a convenient n.
+- Repeated farm records: export a table (export_analysis_table), then
+  fit_gee_model for daily counts (family "poisson", offset "log_fish_count",
+  time "day_index", AR(1)) and fit_mixed_model for interval/cycle responses
+  (random intercept per cage). Include fish size or season as covariates where
+  they confound the predictor of interest. Report the model's caveats (few
+  cages, overdispersion, convergence) alongside its estimates.
+- Sample size and power: get the effect size from the farm's own between-cage
+  variation (estimate_effect_size_from_records, with the user's minimum
+  important difference) or a verified reference, then calculate_sample_size /
+  calculate_achieved_power with that effect_size_source. Never pick an effect
+  size because it gives a convenient n.
 - Check assumptions (check_normality, check_variance_homogeneity) and give the
   fallback if they fail.
 - Write the statistical analysis plan before data collection: primary and
   secondary outcomes, models, alpha, multiple-comparison handling, missing-data
-  handling.
-- When a method isn't available as a tool here (e.g. mixed models), specify it
-  exactly (model formula, software) and say it must be run and checked outside
-  this server — do not report results for it.""",
-    "descriptive_stats, check_normality, check_variance_homogeneity, analyze_ttest, analyze_anova, "
-    "analyze_two_way_anova, analyze_kruskal_wallis, analyze_posthoc_tukey, calculate_pearson_correlation, "
-    "calculate_effect_size_cohens_d, calculate_eta_squared, calculate_confidence_interval, "
-    "calculate_sample_size, calculate_achieved_power, discover_research_opportunities.",
+  handling. Export it with export_analysis_plan_xlsx.
+- When a method isn't available as a tool here (e.g. survival/time-to-event
+  models, Bayesian models), specify it exactly (model, software) and say it must
+  be run and checked outside this server — do not report results for it.""",
+    "export_analysis_table, fit_gee_model, fit_mixed_model, estimate_effect_size_from_records, "
+    "calculate_sample_size, calculate_achieved_power, export_analysis_plan_xlsx, descriptive_stats, "
+    "check_normality, check_variance_homogeneity, analyze_ttest, analyze_anova, analyze_two_way_anova, "
+    "analyze_kruskal_wallis, analyze_posthoc_tukey, calculate_pearson_correlation, "
+    "calculate_effect_size_cohens_d, calculate_eta_squared, calculate_confidence_interval.",
 )
 
 EXPERIMENTAL_DESIGN = _agent(
@@ -233,8 +252,12 @@ Specify:
 - Threats to validity: confounding, pseudo-replication, carry-over, cage
   effects, seasonal drift, and how the design controls each.
 Draft the Research Design Document with the Statistical Analysis Agent's plan
-and propose it at gate G2.""",
-    "calculate_sample_size, calculate_achieved_power, calculate_stocking_density, list_references, "
+and the Feasibility Agent's resource figures, export it with
+export_research_design_document (pass project_dir so the decision record is
+included; every section it reports missing must be filled or explained), and
+propose it at gate G2.""",
+    "estimate_effect_size_from_records, calculate_sample_size, calculate_achieved_power, "
+    "calculate_stocking_density, export_research_design_document, list_references, "
     "record_gate_decision (status 'proposed' only).",
 )
 
@@ -270,8 +293,12 @@ Calculate and list:
 - Schedule constraints (season, spawning/stocking windows, harvest plans) and
   operational risks (weather, disease, equipment failure) with mitigations.
 - A clear feasibility verdict: feasible / feasible with changes (which) / not
-  feasible as designed.""",
-    "calculate_fcr, calculate_economic_fcr, calculate_stocking_density, calculate_sample_size, compute_performance_metrics.",
+  feasible as designed.
+Use plan_trial_resources for fish, biomass, density and feed; take expected
+FCR and survival from the farm's own records (compute_performance_metrics)
+or a verified reference, and say which.""",
+    "plan_trial_resources, compute_performance_metrics, calculate_fcr, calculate_economic_fcr, "
+    "calculate_stocking_density, calculate_sample_size.",
 )
 
 PROPOSAL_WRITING = _agent(
@@ -293,8 +320,12 @@ Rules: cite only references in the project library; take every number from
 the design document, feasibility output or analysis files; for data-driven
 proposals, state the observational limitations in the problem statement and in
 section 19, not just in passing. "Expected results" are hypotheses, never
-results. Export with export_manuscript_docx when a Word file is wanted.""",
-    "list_references, get_project_status, export_manuscript_docx.",
+results. Export with export_research_proposal: the Gantt chart goes in as
+tasks with start/end months, the budget as lines with quantities, unit costs
+and sources (lines without a known unit cost stay uncosted and the total is
+marked incomplete). Add export_analysis_plan_xlsx as an appendix if useful.
+Report every section the export lists as missing.""",
+    "list_references, get_project_status, export_research_proposal, export_analysis_plan_xlsx.",
 )
 
 ETHICS_VALIDATION = _agent(
@@ -334,9 +365,13 @@ How to work:
   but keep the same evidence standard and the same limitations.
 - Tables: means ± SD or SE stated, n stated, test stated; significance letters
   only from a Tukey matrix checked by hand.
+- Figures: make_figure from the analysis tables; state n (returned by the tool)
+  and what error bars show in every caption.
+- Presentations: export_presentation_pptx with figures from make_figure.
 Propose the package at gate G4; submission stays with the human authors.""",
     "results-agent, drafting-agent, abstract-agent, copyedit-agent, integrity-agent, "
-    "list_supported_journals, draft_ai_disclosure, export_manuscript_docx, check_citation_integrity.",
+    "list_supported_journals, draft_ai_disclosure, export_manuscript_docx, make_figure, "
+    "export_presentation_pptx, check_citation_integrity.",
 )
 
 RESEARCH_AGENTS: dict[str, dict] = {

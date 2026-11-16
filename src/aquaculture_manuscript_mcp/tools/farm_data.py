@@ -122,6 +122,15 @@ def _py(value):
     return value
 
 
+def _row_examples(frame: pd.DataFrame, cols: list[str], limit: int = 5) -> list[dict]:
+    """Example records with the spreadsheet row number ("row": header is
+    row 1, so data row index i is row i + 2) for corrections by row."""
+    cols = [c for c in dict.fromkeys(cols) if c in frame.columns]
+    out = frame[cols].head(limit).copy()
+    out.insert(0, "row", out.index + 2)
+    return out.to_dict("records")
+
+
 def load_table(path: str, sheet: str | None = None) -> pd.DataFrame:
     """Load a CSV or Excel file into a DataFrame."""
     p = Path(path)
@@ -294,9 +303,11 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
         if n_bad > 0:
             add("error", "unparseable_dates", "date values that could not be parsed", n_bad)
 
+    key_cols = [c for c in ("date", "cage") if c in df]
     n_dup = int(df.duplicated().sum())
     if n_dup:
-        add("warning", "exact_duplicate_rows", "identical rows (likely double entry)", n_dup)
+        add("warning", "exact_duplicate_rows", "identical rows (likely double entry); the later copy is listed", n_dup,
+            _row_examples(df[df.duplicated()], key_cols))
     if {"date", "cage"} <= set(df.columns):
         keydup = df[df.duplicated(["cage", "date"], keep=False) & ~df.duplicated(keep=False)]
         if len(keydup):
@@ -305,7 +316,7 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
                 "conflicting_cage_date_rows",
                 "same cage and date recorded more than once with different values",
                 int(len(keydup)),
-                keydup.head(5).to_dict("records"),
+                _row_examples(keydup, list(keydup.columns), limit=10),
             )
 
     for role, (lo, hi) in PLAUSIBLE_RANGES.items():
@@ -323,7 +334,7 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
                 "implausible_value",
                 f"{role} outside physically plausible range {lo}–{hi}",
                 int(bad.sum()),
-                df.loc[bad, [c for c in ("date", "cage", role) if c in df]].head(5).to_dict("records"),
+                _row_examples(df.loc[bad], key_cols + [role]),
             )
         valid = s[~bad].dropna()
         if len(valid) >= 20:
@@ -339,7 +350,7 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
                         "extreme_outlier",
                         f"{role} values with robust z-score > 5 (check, may be real events)",
                         int(extreme.sum()),
-                        df.loc[idx, [c for c in ("date", "cage", role) if c in df]].head(5).to_dict("records"),
+                        _row_examples(df.loc[idx], key_cols + [role]),
                     )
 
     coverage = {}
@@ -370,7 +381,7 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
                         "abw_possible_unit_error",
                         f"cage {cage}: ABW fell >90% between samplings within one production cycle (kg entered instead of g?)",
                         int(len(unit)),
-                        [{"date": d, "abw_g": s[d]} for d in unit.index[:5]],
+                        _row_examples(g[g["date"].isin(unit.index)], key_cols + ["abw_g"]),
                     )
                 if len(drops):
                     add(
@@ -378,19 +389,18 @@ def check_data_quality(path: str, column_roles: dict[str, str], sheet: str | Non
                         "abw_decrease",
                         f"cage {cage}: ABW fell >10% between consecutive samplings within one production cycle (sampling error, grading or a real loss?)",
                         int(len(drops)),
-                        [{"date": d, "abw_g": s[d]} for d in drops.index[:5]],
+                        _row_examples(g[g["date"].isin(drops.index)], key_cols + ["abw_g"]),
                     )
         if "fish_count" in df:
-            for cage, g in df.dropna(subset=["fish_count", "date"]).groupby("cage"):
-                s = g.set_index("date")["fish_count"].sort_index()
-                rises = s[s.diff() > 0]
+            for cage, g in df.dropna(subset=["fish_count", "date"]).sort_values("date").groupby("cage"):
+                rises = g[g["fish_count"].diff() > 0]
                 if len(rises):
                     add(
                         "info",
                         "restocking_detected",
                         f"cage {cage}: live fish count increased; treated as the start of a new production cycle (confirm: restocking, transfer or entry error?)",
                         int(len(rises)),
-                        [{"date": d, "fish_count": v} for d, v in rises.head(5).items()],
+                        _row_examples(rises, key_cols + ["fish_count"]),
                     )
 
     order = {"error": 0, "warning": 1, "info": 2}
@@ -577,6 +587,68 @@ def compute_performance_metrics(path: str, column_roles: dict[str, str], sheet: 
                 "fcr": "biomass-corrected FCR = feed / ((biomass_end + dead biomass) - biomass_start); dead biomass = deaths x mean of start/end ABW. Interval FCR left undefined when gain < 0.5% of start biomass. Cycle FCR = total feed / total adjusted gain over the cycle's intervals.",
                 "survival": "survival % = (1 - deaths in cycle / fish count at cycle start) x 100, per production cycle; per-cage means use complete cycles only",
             },
+        }
+    )
+
+
+def build_analysis_table(
+    path: str,
+    column_roles: dict[str, str],
+    level: str = "interval",
+    sheet: str | None = None,
+    temperature_lags: list[int] | None = None,
+) -> tuple[pd.DataFrame, dict]:
+    """Analysis-ready table at one of three levels:
+    - "daily": one row per cage-day after cleaning, plus cycle, day_index
+      (days since the cage's first record, for time-series models),
+      mortality_rate_pct, log_fish_count (offset for count models), season,
+      and temperature lagged by the requested days within each cage.
+    - "interval": one row per cage x sampling interval (SGR, FCR, mean environment).
+    - "cycle": one row per cage x production cycle.
+    """
+    if level not in ("daily", "interval", "cycle"):
+        raise ValueError("level must be 'daily', 'interval' or 'cycle'")
+    df, log = _clean_for_analysis(_canonical(load_table(path, sheet), column_roles))
+    if level == "daily":
+        out = _daily(df)
+        if {"cage", "date"} <= set(out.columns):
+            out["day_index"] = (out["date"] - out.groupby("cage")["date"].transform("min")).dt.days
+        if "fish_count" in out:
+            out["log_fish_count"] = np.log(out["fish_count"].where(out["fish_count"] > 0))
+        for lag in temperature_lags or []:
+            if lag < 1 or "temperature_c" not in out:
+                raise ValueError("temperature_lags must be positive integers and need the temperature_c role")
+            # Lag by calendar day within cage, so a missing day isn't silently skipped over.
+            shifted = out[["cage", "date", "temperature_c"]].copy()
+            shifted["date"] = shifted["date"] + pd.Timedelta(days=lag)
+            out = out.merge(shifted.rename(columns={"temperature_c": f"temperature_c_lag{lag}"}), on=["cage", "date"], how="left")
+        return out, log
+    intervals = compute_sampling_intervals(df)
+    if level == "interval":
+        return intervals, log
+    return compute_cycle_summaries(df, intervals), log
+
+
+def export_analysis_table(
+    path: str,
+    column_roles: dict[str, str],
+    output_path: str,
+    level: str = "interval",
+    sheet: str | None = None,
+    temperature_lags: list[int] | None = None,
+) -> dict:
+    """Write an analysis-ready table (daily, interval or cycle level) to CSV
+    for the modelling, effect-size and figure tools."""
+    table, log = build_analysis_table(path, column_roles, level, sheet, temperature_lags)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    table.to_csv(output_path, index=False)
+    return _py(
+        {
+            "output_path": output_path,
+            "level": level,
+            "rows": len(table),
+            "columns": list(table.columns),
+            "cleaning_log": log,
         }
     )
 

@@ -98,6 +98,89 @@ def register_dataset(project_dir: str, source_path: str, description: str) -> di
     return {"registered": str(dest), **entry}
 
 
+def import_pasted_table(project_dir: str, csv_text: str, filename: str, description: str) -> dict:
+    """Save table data pasted into the chat (CSV text) as a raw dataset in
+    the project, with checksum — for clients where attached files have no
+    path on disk. The text is stored exactly as given."""
+    p = _project(project_dir)
+    if not filename.lower().endswith(".csv"):
+        raise ValueError("filename must end in .csv")
+    name = Path(filename).name
+    dest = p / "data" / "raw" / name
+    if dest.exists():
+        raise ValueError(f"{name} is already registered; choose a new filename")
+    if len(csv_text.strip().splitlines()) < 2:
+        raise ValueError("csv_text needs a header row and at least one data row")
+    dest.write_text(csv_text, encoding="utf-8", newline="")
+    digest = hashlib.sha256(dest.read_bytes()).hexdigest()
+    manifest_path = p / "data" / "raw" / "manifest.json"
+    manifest = _read_json(manifest_path, [])
+    entry = {"file": name, "sha256": digest, "description": description, "source_path": "pasted in conversation", "registered": _now()}
+    manifest.append(entry)
+    _write_json(manifest_path, manifest)
+    return {"registered": str(dest), **entry}
+
+
+def apply_data_corrections(
+    project_dir: str,
+    raw_file: str,
+    corrections: list[dict],
+    user_confirmation: str,
+    sheet: str | None = None,
+) -> dict:
+    """Write a corrected copy of a registered raw dataset to data/processed,
+    leaving the raw file untouched, and log every change.
+
+    corrections: list of
+        {"row": <spreadsheet row number as reported by check_data_quality>,
+         "column": <column name>, "new_value": <value or null for missing>,
+         "reason": <why>}
+      or {"row": <n>, "action": "drop", "reason": <why>}.
+    user_confirmation: quote the user's approval of these corrections.
+    """
+    import pandas as pd
+
+    from aquaculture_manuscript_mcp.tools.farm_data import load_table
+
+    p = _project(project_dir)
+    if not user_confirmation.strip():
+        raise ValueError("user_confirmation is required: quote the user's approval of these corrections")
+    src = p / "data" / "raw" / Path(raw_file).name
+    if not src.exists():
+        raise ValueError(f"{raw_file} is not in this project's data/raw; register it first")
+    df = load_table(str(src), sheet)
+    n_rows = len(df)
+    applied, drops = [], []
+    for c in corrections:
+        if "reason" not in c or not str(c["reason"]).strip():
+            raise ValueError(f"every correction needs a reason: {c}")
+        row = int(c["row"])
+        idx = row - 2
+        if not 0 <= idx < n_rows:
+            raise ValueError(f"row {row} is outside the data (rows 2–{n_rows + 1})")
+        if c.get("action") == "drop":
+            drops.append(idx)
+            applied.append({"row": row, "action": "drop", "reason": c["reason"]})
+            continue
+        col = c.get("column")
+        if col not in df.columns:
+            raise ValueError(f"column '{col}' not in {raw_file}")
+        old = df.at[idx, col]
+        new = c.get("new_value")
+        if df[col].dtype != object:
+            df[col] = df[col].astype(object)  # avoid dtype clashes; written to CSV as text anyway
+        df.at[idx, col] = pd.NA if new is None else new
+        applied.append({"row": row, "column": col, "old_value": None if pd.isna(old) else old, "new_value": new, "reason": c["reason"]})
+    df = df.drop(index=drops)
+    out = p / "data" / "processed" / f"{src.stem}_corrected.csv"
+    df.to_csv(out, index=False)
+    log_path = p / "data" / "processed" / f"{src.stem}_corrections.json"
+    _write_json(log_path, {"source": src.name, "source_sha256": hashlib.sha256(src.read_bytes()).hexdigest(),
+                           "user_confirmation": user_confirmation, "applied": applied, "created": _now()})
+    log_claim(project_dir, f"{len(applied)} correction(s) applied to {src.name}", "user_statement", user_confirmation)
+    return {"corrected_file": str(out), "correction_log": str(log_path), "rows_in": n_rows, "rows_out": len(df), "applied": applied}
+
+
 def save_analysis(project_dir: str, name: str, result: dict, inputs: dict | None = None) -> dict:
     """Save a tool result as analysis/<timestamp>_<name>.json with its inputs."""
     p = _project(project_dir)

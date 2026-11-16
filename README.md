@@ -201,10 +201,10 @@ proposal, G4 publication). Full design: [docs/research-intelligence-system.md](d
 | Phase | Agent prompts | What backs them |
 |---|---|---|
 | 0 | `research-director` | project workspace + every agent |
-| 1 — research intelligence | `data-intelligence-agent`, `opportunity-discovery-agent`, `literature-review-agent` | farm-data tools, CrossRef, reference library (built and tested) |
-| 2 — research design | `question-hypothesis-agent`, `statistical-analysis-agent`, `experimental-design-agent`, `methodology-agent` | statistics + sample-size/power tools |
-| 3 — proposal | `feasibility-agent`, `proposal-writing-agent`, `ethics-validation-agent` | calculators, docx export, integrity check |
-| 4 — publication | `publication-agent` | the six manuscript agents above |
+| 1 — research intelligence | `data-intelligence-agent`, `opportunity-discovery-agent`, `literature-review-agent` | farm-data tools, approved corrections, CrossRef, reference library |
+| 2 — research design | `question-hypothesis-agent`, `statistical-analysis-agent`, `experimental-design-agent`, `methodology-agent` | GEE and mixed models, effect size from farm records, sample size, design document, analysis plan |
+| 3 — proposal | `feasibility-agent`, `proposal-writing-agent`, `ethics-validation-agent` | resource planner, 22-part proposal (.docx) with Gantt and budget, integrity check |
+| 4 — publication | `publication-agent` | the six manuscript agents, figures, slides |
 
 Two starting points: **Workflow A** (question first, e.g. heat stress in
 Sobaity, Shaam and Gabit) and **Workflow B** (data first: upload years of
@@ -213,7 +213,12 @@ as observational: the system reports candidate associations with data
 sufficiency and confounders, and recommends a controlled study when a
 question is causal.
 
-Worked run on synthetic cage-farm records: [examples/cage_farm_phase1](examples/cage_farm_phase1/README.md).
+Worked run, from synthetic cage-farm records to a research proposal: [examples/cage_farm_workflow](examples/cage_farm_workflow/README.md).
+
+**Giving it your data.** The tools read files on the computer running the
+server, so give a path (e.g. `D:\farm\records.xlsx`). If your client only lets
+you attach or paste a table, paste it as CSV and the Director saves it into
+the project with `import_pasted_table`.
 
 ### Farm-data tools (Phase 1)
 
@@ -237,10 +242,34 @@ column names, so any spreadsheet layout works. Excel and CSV are supported.
 
 The analysis tools accept `project_dir` to save their output into a research project.
 
+- `export_analysis_table(path, column_roles, output_path, level)` — analysis-ready
+  CSV at `daily` (with `day_index`, `log_fish_count`, cycle, season, optional
+  lagged temperature), `interval` or `cycle` level.
+
+### Models, effect size and planning (Phases 2–3)
+
+- `fit_gee_model` — repeated measures within cages; Poisson with
+  `log_fish_count` offset for daily mortality (rate ratios), AR(1) over
+  `day_index`, bias-reduced robust SEs with few cages.
+- `fit_mixed_model` — random intercept per cage for interval/cycle outcomes.
+- `estimate_effect_size_from_records` — effect size from between-cage
+  variation and your minimum important difference, ready for `calculate_sample_size`.
+- `plan_trial_resources` — fish, cages, biomass, density and feed; costs only
+  from unit costs you supply with a source.
+
+### Research documents
+
+- `export_research_design_document` — the G2 design document (.docx).
+- `export_research_proposal` — 22-part proposal (.docx) with a Gantt chart and
+  a budget table whose totals are computed; uncosted lines mark it incomplete.
+- `export_analysis_plan_xlsx`, `make_figure` (300-dpi PNG), `export_presentation_pptx`.
+- Missing sections are printed as **NOT YET PROVIDED** and listed, never filled in.
+
 ### Research project workspace
 
 `create_research_project`, `register_dataset` (raw data copied unchanged with
-SHA-256), `save_analysis`, `add_verified_reference` (CrossRef-resolved only),
+SHA-256), `import_pasted_table`, `apply_data_corrections` (by row number, with
+your quoted approval; writes a corrected copy), `save_analysis`, `add_verified_reference` (CrossRef-resolved only),
 `list_references`, `record_gate_decision` (approval needs the user's quoted
 decision), `log_claim` (audit trail; needs a source), `get_project_status`.
 

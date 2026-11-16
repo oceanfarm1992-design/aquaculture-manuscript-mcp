@@ -1,0 +1,76 @@
+{
+  "corrections_applied": 7,
+  "quality_errors_after_corrections": 0,
+  "gee_rate_ratio_per_degC": {
+    "Gabit": 1.1262995282630963,
+    "Shaam": 1.2845931088319023,
+    "Sobaity": 1.5223005645364183
+  },
+  "gee_caveats": [
+    "9 units (clusters): sandwich standard errors are unreliable with few clusters even after bias reduction; treat p-values as approximate and confirm with a mixed model or a designed study",
+    "Pearson dispersion 19.35 (>1.5): the counts are overdispersed. Robust SEs account for this in inference, but consider whether unmeasured events (disease, handling) drive the extra variation."
+  ],
+  "mixed_model_sgr": {
+    "Intercept": [
+      -4.26503,
+      0.0
+    ],
+    "C(species)[T.Shaam]": [
+      -0.00323,
+      0.8954
+    ],
+    "C(species)[T.Sobaity]": [
+      -0.01883,
+      0.4442
+    ],
+    "mean_temperature_c": [
+      0.37221,
+      0.0
+    ],
+    "abw_start_g": [
+      -0.00047,
+      0.0313
+    ],
+    "I(mean_temperature_c ** 2)": [
+      -0.00683,
+      0.0
+    ]
+  },
+  "effect_size": {
+    "d": 2.065369803786615,
+    "sd": 4.841747943475384,
+    "n_units": 3
+  },
+  "sample_size": {
+    "per_group": 5,
+    "planned": 5,
+    "achieved_power": 0.815245370724464
+  },
+  "resources": {
+    "fish": 126000,
+    "feed_kg": 57707.76299999999
+  },
+  "design_document_missing": [],
+  "proposal_missing": [],
+  "budget": {
+    "currency": "KWD",
+    "total_of_costed_lines": 0.0,
+    "lines_missing_unit_cost": [
+      "Sobaity fingerlings",
+      "Feed",
+      "Water-quality probe calibration",
+      "Mortality diagnostics"
+    ],
+    "complete": false
+  },
+  "analysis_plan_missing": [],
+  "figures_n": {
+    "fig4": {
+      "Gabit": 3,
+      "Shaam": 3,
+      "Sobaity": 3
+    }
+  },
+  "references": 2,
+  "slides": 5
+}

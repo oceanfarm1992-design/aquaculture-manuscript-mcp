@@ -22,7 +22,11 @@ from aquaculture_manuscript_mcp.tools import (
     citations,
     docx_export,
     farm_data,
+    figures,
+    models,
+    planning,
     power as power_tool,
+    research_documents,
     research_workspace,
     statistics as statistics_tool,
     water_quality,
@@ -722,6 +726,235 @@ def get_project_status(project_dir: str) -> dict:
     """Datasets, analyses, references, documents, gate status and audit-trail
     size for a research project."""
     return research_workspace.get_project_status(project_dir)
+
+
+@mcp.tool()
+def import_pasted_table(project_dir: str, csv_text: str, filename: str, description: str) -> dict:
+    """Save table data the user pasted into the chat (as CSV text) into the
+    project's data/raw with a checksum, so the analysis tools can read it.
+    Use this when the user's client gives no file path (e.g. a pasted table)."""
+    return research_workspace.import_pasted_table(project_dir, csv_text, filename, description)
+
+
+@mcp.tool()
+def apply_data_corrections(
+    project_dir: str, raw_file: str, corrections: list[dict], user_confirmation: str, sheet: str | None = None
+) -> dict:
+    """Write a corrected copy of a registered raw dataset to data/processed
+    (the raw file is never changed) and log every change. corrections:
+    [{"row": <row number from check_data_quality>, "column": ..., "new_value": ...
+    or null, "reason": ...}] or [{"row": n, "action": "drop", "reason": ...}].
+    Only after the user approved these exact corrections; quote them in
+    user_confirmation."""
+    return research_workspace.apply_data_corrections(project_dir, raw_file, corrections, user_confirmation, sheet)
+
+
+@mcp.tool()
+def export_analysis_table(
+    path: str,
+    column_roles: dict[str, str],
+    output_path: str,
+    level: str = "interval",
+    sheet: str | None = None,
+    temperature_lags: list[int] | None = None,
+) -> dict:
+    """Write an analysis-ready CSV from farm records at level "daily"
+    (cage-days with day_index, cycle, mortality_rate_pct, log_fish_count,
+    season, optional lagged temperature columns), "interval" (cage x
+    sampling interval: SGR, FCR, mean environment) or "cycle" (cage x
+    production cycle). Feed it to the model, effect-size and figure tools."""
+    return farm_data.export_analysis_table(path, column_roles, output_path, level, sheet, temperature_lags)
+
+
+# ---------------------------------------------------------------------------
+# Models for repeated measures on cages (Phase 2)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def fit_mixed_model(
+    table_path: str,
+    response: str,
+    fixed_effects: list[str],
+    group: str,
+    categorical: list[str] | None = None,
+    interactions: list[list[str]] | None = None,
+    quadratic: list[str] | None = None,
+    sheet: str | None = None,
+) -> dict:
+    """Linear mixed model with a random intercept per group (cage), REML.
+    For continuous repeated measures such as interval SGR or FCR. Text
+    columns are treated as categorical automatically. interactions: pairs of
+    fixed effects, e.g. [["mean_temperature_c", "species"]]. quadratic:
+    fixed effects to add a squared term for."""
+    return models.fit_mixed_model(table_path, response, fixed_effects, group, categorical, interactions, quadratic, sheet)
+
+
+@mcp.tool()
+def fit_gee_model(
+    table_path: str,
+    response: str,
+    fixed_effects: list[str],
+    group: str,
+    family: str = "gaussian",
+    time: str | None = None,
+    correlation: str | None = None,
+    offset: str | None = None,
+    categorical: list[str] | None = None,
+    interactions: list[list[str]] | None = None,
+    quadratic: list[str] | None = None,
+    sheet: str | None = None,
+) -> dict:
+    """GEE for repeated measures within cages, robust SEs (bias-reduced
+    when fewer than 40 cages). For daily mortality counts use
+    family="poisson", offset="log_fish_count", time="day_index" (AR(1)
+    correlation) on a daily table from export_analysis_table; coefficients
+    then come with rate ratios."""
+    return models.fit_gee_model(table_path, response, fixed_effects, group, family, time, correlation, offset,
+                                categorical, interactions, quadratic, sheet)
+
+
+@mcp.tool()
+def estimate_effect_size_from_records(
+    table_path: str,
+    response: str,
+    unit_column: str,
+    minimum_important_difference: float,
+    difference_rationale: str,
+    group_column: str | None = None,
+    k_groups: int = 2,
+    sheet: str | None = None,
+) -> dict:
+    """Effect size for planning a trial from the farm's own between-cage
+    variation (d = minimum important difference / SD of cage means; also
+    Cohen's f for k groups). Returns an effect_size_source string to pass
+    to calculate_sample_size. The minimum important difference is the
+    user's judgement, explained in difference_rationale."""
+    return models.estimate_effect_size_from_records(table_path, response, unit_column, minimum_important_difference,
+                                                    difference_rationale, group_column, k_groups, sheet)
+
+
+# ---------------------------------------------------------------------------
+# Feasibility and documents (Phases 3-4)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def plan_trial_resources(
+    treatments: int,
+    units_per_treatment: int,
+    fish_per_unit: int,
+    initial_weight_g: float,
+    expected_final_weight_g: float,
+    duration_days: int,
+    expected_fcr: float,
+    expected_fcr_source: str,
+    expected_survival_pct: float,
+    expected_survival_source: str,
+    fish_sampled_per_unit_per_event: int = 0,
+    sampling_events: int = 0,
+    spare_fish_pct: float = 10.0,
+    unit_volume_m3: float | None = None,
+    feed_cost_per_kg: float | None = None,
+    feed_cost_source: str | None = None,
+    fish_cost_each: float | None = None,
+    fish_cost_source: str | None = None,
+    currency: str | None = None,
+) -> dict:
+    """Fish, cages/tanks, biomass, stocking density and feed a trial needs,
+    plus feed and fish cost when unit costs with sources are given. Expected
+    FCR and survival must state their source (e.g. compute_performance_metrics
+    on the farm's own records)."""
+    return planning.plan_trial_resources(
+        treatments, units_per_treatment, fish_per_unit, initial_weight_g, expected_final_weight_g, duration_days,
+        expected_fcr, expected_fcr_source, expected_survival_pct, expected_survival_source,
+        fish_sampled_per_unit_per_event, sampling_events, spare_fish_pct, unit_volume_m3,
+        feed_cost_per_kg, feed_cost_source, fish_cost_each, fish_cost_source, currency,
+    )
+
+
+@mcp.tool()
+def export_research_design_document(
+    output_path: str, title: str, sections: dict[str, str], project_dir: str = "", version_note: str | None = None
+) -> dict:
+    """Research Design Document (.docx) for gate G2. sections keys:
+    research_question, hypotheses, study_type, experimental_unit,
+    treatments_and_control, replication_and_sample_size,
+    randomisation_and_blocking, sampling_schedule, response_variables,
+    statistical_analysis_plan, threats_to_validity, data_management,
+    ethics_and_permits, resources_and_feasibility. Missing sections are
+    printed as NOT YET PROVIDED and listed. With project_dir, the gate
+    decision record is appended."""
+    history = None
+    if project_dir:
+        import json
+        from pathlib import Path
+
+        history = json.loads((Path(project_dir) / "decisions.json").read_text(encoding="utf-8"))
+    return research_documents.export_research_design_document(output_path, title, sections, history, version_note)
+
+
+@mcp.tool()
+def export_research_proposal(
+    output_path: str,
+    title: str,
+    sections: dict[str, str],
+    authors: list[str] | None = None,
+    gantt: list[dict] | None = None,
+    total_months: int | None = None,
+    budget: list[dict] | None = None,
+    currency: str | None = None,
+    references: list[str] | None = None,
+) -> dict:
+    """Full research proposal (.docx): title + 21 sections (abstract,
+    introduction, problem_statement, justification, literature_review,
+    research_gap, research_questions, objectives, hypotheses,
+    conceptual_framework, materials_methods, study_design,
+    sampling_and_sample_size, data_collection, statistical_analysis_plan,
+    ethics, expected_results, limitations, work_plan, budget,
+    references_appendices). gantt: [{task, start_month, end_month}] drawn as
+    a month grid. budget: [{item, quantity, unit, unit_cost (or null),
+    source}] with totals computed; lines without unit_cost mark the total
+    incomplete."""
+    return research_documents.export_research_proposal(output_path, title, sections, authors, gantt, total_months, budget, currency, references)
+
+
+@mcp.tool()
+def export_analysis_plan_xlsx(output_path: str, title: str, rows: list[dict]) -> dict:
+    """Statistical analysis plan as an Excel sheet, one row per hypothesis
+    (hypothesis_id, hypothesis, response, predictors, experimental_unit,
+    model, assumption_checks, alpha, multiple_comparisons, missing_data, notes)."""
+    return research_documents.export_analysis_plan_xlsx(output_path, title, rows)
+
+
+@mcp.tool()
+def make_figure(
+    table_path: str,
+    kind: str,
+    x: str,
+    y: str,
+    output_path: str,
+    group: str | None = None,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    resample: str | None = None,
+    sheet: str | None = None,
+) -> dict:
+    """300-dpi PNG figure from an analysis table: "line" (over time, per
+    group; resample="W"/"M" for weekly/monthly means), "scatter", "mean_bar"
+    (mean ± SD with n per bar) or "box". Returns n per group for the caption.
+    For mean_bar/box each row is one observation: aggregate to one row per
+    cage (the experimental unit) first."""
+    return figures.make_figure(table_path, kind, x, y, output_path, group, title, xlabel, ylabel, resample, sheet)
+
+
+@mcp.tool()
+def export_presentation_pptx(output_path: str, title: str, subtitle: str, slides: list[dict]) -> dict:
+    """Slide deck (.pptx, 16:9) for conference or management presentations.
+    slides: [{title, bullets: [...], image_path (optional PNG from
+    make_figure), notes (optional speaker notes)}]."""
+    return research_documents.export_presentation_pptx(output_path, title, subtitle, slides)
 
 
 def main() -> None:
